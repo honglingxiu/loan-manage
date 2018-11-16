@@ -1,0 +1,73 @@
+<template>
+    <div>
+        <jb-breadcrumb  @handleBack="goBackToCustomerAccounList" :hideBack="currentView=='customerAccountList'">当前位置：权限管理 > {{breadcrumb}}</jb-breadcrumb>
+        <div>
+            <customerAccountList :customerNameList="customerNameList" ref="customerAccountList"  v-show="currentView==='customerAccountList'" @setCustomerAccount="setCustomerAccount"></customerAccountList>
+            <setCustomerAccount :addFlag="addFlag" :customerNameList="customerNameList"  :selectRow="selectRow" v-if="currentView.includes('setCustomerAccount')" ></setCustomerAccount>
+        </div>
+    </div>
+</template>
+<script>
+import customerAccountList from "./customerAccountList.vue";
+import setCustomerAccount from "./setCustomerAccount.vue";
+export default {
+    data() {
+        return {
+            addFlag:false,//是否显示新增按钮
+            currentView:"customerAccountList",
+            selectRow: {},
+            customerNameList:[]
+
+        };
+    },
+    computed: {
+        breadcrumb() {
+            switch (this.currentView) {
+                case "customerAccountList":
+                    return "客户账号";
+                case "customerAccountList/setCustomerAccount/edit":
+                    return "客户账号 > 编辑账号";
+                case "customerAccountList/setCustomerAccount/add":
+                    return "客户账号 > 新增账号";
+                default:
+                    break;
+            }
+        }
+    },
+    methods: {
+        setCustomerAccount(row){
+            if (row) {
+                this.currentView = "customerAccountList/setCustomerAccount/edit";
+                this.selectRow = row;
+                return;
+            }
+            this.currentView = "customerAccountList/setCustomerAccount/add";
+            this.selectRow = {};
+        },
+        getCustomerAccountList(){
+            this.$refs.customerAccountList.getCustomerAccountList();
+        },
+        goBackToCustomerAccounList(){
+            //返回账号管理列表页
+            this.currentView="customerAccountList";
+            this.getCustomerAccountList();
+
+        },
+        getCustomerNameList(){
+            //查询公司名称列表
+            this.$api.vkcPost(
+                "supermarketloan/mgr/loanapply/getLoanApiItem","",
+                res => {
+                    this.customerNameList = res.offline;
+                });
+        },
+    },
+    components:{
+       customerAccountList ,
+       setCustomerAccount
+    },
+    mounted(){
+        this.getCustomerNameList();
+    }
+};
+</script>

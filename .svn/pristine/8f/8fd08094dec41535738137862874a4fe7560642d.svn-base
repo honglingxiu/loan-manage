@@ -1,0 +1,303 @@
+<template>
+  <div>
+    <el-dialog title="提交" :visible.sync="dialogVisible" width="600px" @close="hideSubmitDialog()">
+      <el-form label-width="120px">
+        <el-form-item label="发送给:">
+          <el-radio-group v-model="customerType">
+            <el-radio label="1">客服</el-radio>
+            <el-radio label="2" v-if="onlyCustomerFlag">客户</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+
+      <el-form ref="service" :model="service" v-show="customerType==='1'" label-width="120px">
+        <el-form-item label="任务编号:">
+          <el-input disabled placeholder="无需输入,提交成功后自动生成"></el-input>
+        </el-form-item>
+
+        <el-form-item label="选择修改字段：">
+          <el-button type="primary" size="small" @click="$refs.fieldInfo.openDialog()">配置</el-button>
+          <ul class="act-tags clearfix bgccc mg-t20" v-show="fieldList.length>0" style="padding:0 10px 10px">
+            <li v-for="item in fieldList" :key="item.id" class="active lh20" style="padding:5px">{{item.metaDesc}}</li>
+          </ul>
+        </el-form-item>
+
+        <el-form-item label="选择业务类型:">
+          <jb-businessTypes v-model="service.businessTypeId"></jb-businessTypes>
+          <!-- <el-radio-group v-model="service.jobType">
+              <el-radio label="0">确认信息</el-radio>
+              <el-radio label="1">补充信息</el-radio>
+          </el-radio-group> -->
+        </el-form-item>
+        <el-form-item label="任务说明:">
+          <el-input type="textarea" v-model="service.jobDescription"></el-input>
+        </el-form-item>
+      </el-form>
+
+      <el-form ref="customer" :model="customer" v-show="customerType==='2'" label-width="120px">
+        <el-form-item label="选择提交方式:">
+          <el-radio-group v-model="customer.submitMode">
+            <el-radio label="1">API</el-radio>
+            <el-radio label="2">线下</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="选择提交类型:" v-show="customer.submitMode==='1'">
+          <el-radio-group v-model="customer.submitType">
+            <el-radio label="2">赠险</el-radio>
+            <el-radio label="1">贷款</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="选择产品:" v-show="customer.submitMode==='1'&&customer.submitType==='2'">
+          <el-checkbox :indeterminate="customer.isIndeterminate" v-model="customer.checkAll"
+                       @change="handleCheckAllChange">全选
+          </el-checkbox>
+          <el-checkbox-group v-model="customer.checkedCustomer" @change="handleCheckedCustomerChange"
+                             class="default-checkbox-group">
+            <el-checkbox v-for="item in customer.customerOptions" :label="item.channelCode" :key="item.channelCode">
+              {{item.customerName}}
+            </el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+        <el-form-item label="选择产品:" v-show="customer.submitMode==='1'&&customer.submitType==='1'">
+          <el-checkbox :indeterminate="customer.loanIsIndeterminate" v-model="customer.loanCheckAll"
+                       @change="loanCheckAllChange">全选
+          </el-checkbox>
+          <el-checkbox-group v-model="customer.checkedProduct" @change="handleCheckedProductChange"
+                             class="default-checkbox-group">
+            <el-checkbox v-for="item in customer.productOptions" :label="item.channelCode" :key="item.channelCode">
+              {{item.customerName}}
+            </el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+        <el-form-item label="选择客户:" v-show="customer.submitMode==='2'">
+          <el-checkbox :indeterminate="customer.offlineIsIndeterminate" v-model="customer.offlineCheckAll"
+                       @change="offlineCheckAllChange">全选
+          </el-checkbox>
+          <el-checkbox-group v-model="customer.selectCustomer" @change="handleSelectCustomerChange"
+                             class="default-checkbox-group">
+            <el-checkbox v-for="item in customer.selectCustomerOptions" :label="item.channelCode"
+                         :key="item.channelCode">{{item.customerName}}
+            </el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+        <!-- <el-form-item label="选择客户:" v-show="customer.submitMode==='2'">
+            <el-select v-model="customer.selectCustomer" filterable placeholder="请选择客户名称">
+                <el-option v-for="item in customer.selectCustomerOptions" :key="item.channelCode" :label="item.customerName" :value="item.channelCode"></el-option>
+            </el-select>
+        </el-form-item> -->
+      </el-form>
+
+      <div class="text-center">
+        <el-button @click="hideSubmitDialog()">取消</el-button>
+        <el-button type="primary" @click="submitData()">确定</el-button>
+      </div>
+    </el-dialog>
+    <jb-fieldInfo v-model="fieldList" ref="fieldInfo" title="配置修改字段"></jb-fieldInfo>
+  </div>
+</template>
+<script>
+  export default {
+    props: {
+      formData: Object,
+      onlyCustomerFlag:{//发送客服标识，false的话仅显示客服
+        type:Boolean,
+        default:true
+      }
+    },
+    data() {
+      return {
+        fieldList: [],
+        dialogVisible: false,
+        customerType: "1", //1客服  2客户
+
+        service: {
+          // jobType: "0", //0确认信息 1补充信息
+          jobDescription: "",
+          businessTypeId: "",
+          metaItems: []
+        },
+        customer: {
+          submitType: "2", //1贷款 2赠险
+          submitMode: "1", //1API 2线下
+
+          customerOptions: [], //赠险  多选  选择客户  选项 ----对应后台 insurance
+          checkedCustomer: [], //赠险  多选  选择客户  选中
+          checkAll: false, //赠险  多选  选择客户  是否全选
+          isIndeterminate: false, //赠险  多选  选择客户
+
+          checkedProduct: [], //贷款 选择产品 选中
+          productOptions: [], //贷款 选择产品 选项  ----对应后台 loan
+          loanCheckAll: false, //贷款  多选  选择产品  是否全选
+          loanIsIndeterminate: false, //贷款  多选  选择产品
+
+          selectCustomer: [], //线下 多选  选择客户  选中
+          selectCustomerOptions: [], //线下 多选  选择客户  选项  ----对应后台 offline
+          offlineCheckAll: false,  //线下  多选  选择客户  是否全选
+          offlineIsIndeterminate: false  //线下  多选  选择客户
+        }
+      };
+    },
+    watch: {
+      fieldList(val) {
+        for (const item of val) {
+          this.service.metaItems.push(item.id);
+        }
+      }
+    },
+    computed: {
+      submitType() {
+        if (this.customer.submitMode === "2") return "3"; //3贷款线下
+        if (this.customer.submitType === "1") return "1"; //1贷款API
+        if (this.customer.submitType === "2") return "2"; //2赠险API
+      }
+    },
+    methods: {
+      hideSubmitDialog(){
+        this.$refs.fieldInfo.formMeta.forEach(item=>{
+          item.selectFlag=false;//整个提交弹窗点击取消的话，配置修改字段回归最原始的值false，没有选中的状态
+        });
+        this.dialogVisible = false;
+      },
+      openDialog() {
+        Object.assign(this.$data, this.$options.data());
+        this.$api.vkcPost("supermarketloan/mgr/loanapply/getLoanApiItem", "", res => {
+          this.customer.productOptions = res.loan;
+          this.customer.customerOptions = res.insurance;
+          this.customer.selectCustomerOptions = res.offline;
+          this.dialogVisible = true;
+        });
+      },
+      handleCheckAllChange(val) {
+        this.customer.checkedCustomer = [];
+        if (val) {
+          this.customer.customerOptions.forEach(e => {
+            this.customer.checkedCustomer.push(e.channelCode);
+          });
+        }
+        this.customer.isIndeterminate = false;
+      },
+      loanCheckAllChange(val) {
+        this.customer.checkedProduct = [];
+        if (val) {
+          this.customer.productOptions.forEach(e => {
+            this.customer.checkedProduct.push(e.channelCode);
+          });
+        }
+        this.customer.loanIsIndeterminate = false;
+      },
+      offlineCheckAllChange(val) {
+        this.customer.selectCustomer = [];
+        if (val) {
+          this.customer.selectCustomerOptions.forEach(e => {
+            this.customer.selectCustomer.push(e.channelCode);
+          });
+        }
+        this.customer.offlineIsIndeterminate = false;
+      },
+      handleCheckedCustomerChange(value) {
+        let checkedCount = value.length;
+        this.customer.checkAll = checkedCount === this.customer.customerOptions.length;
+        this.customer.isIndeterminate = checkedCount > 0 && checkedCount < this.customer.customerOptions.length;
+      },
+      handleCheckedProductChange(value) {
+        let checkedCount = value.length;
+        this.customer.loanCheckAll = checkedCount === this.customer.productOptions.length;
+        this.customer.loanIsIndeterminate = checkedCount > 0 && checkedCount < this.customer.productOptions.length;
+      },
+      handleSelectCustomerChange(value) {
+        let checkedCount = value.length;
+        this.customer.offlineCheckAll = checkedCount === this.customer.selectCustomerOptions.length;
+        this.customer.offlineIsIndeterminate = checkedCount > 0 && checkedCount < this.customer.selectCustomerOptions.length;
+      },
+      getLoanApiIdItem() {
+        let loanApiIdItem = [];
+        switch (this.submitType) {
+          case "1": //1贷款API
+            loanApiIdItem = this.customer.checkedProduct;
+            break;
+          case "2": //2赠险API
+            loanApiIdItem = this.customer.checkedCustomer;
+            break;
+          case "3": //3贷款线下
+            // loanApiIdItem.push(this.customer.selectCustomer);
+            loanApiIdItem = this.customer.selectCustomer;
+            break;
+          default:
+            break;
+        }
+        return loanApiIdItem;
+      },
+      submitData() {
+        this.$api.showLoading("正在提交，请稍后...");
+        let postUrl = "";
+        let data = {};
+        if(this.onlyCustomerFlag){//金融贷款的
+          if (this.customerType === "1") {
+            // 提交客服
+            postUrl = "supermarketloan/mgr/loanapply/submitCustomerServiceTask";
+            data = {...this.service};
+          } else {
+            // 提交客户
+            postUrl = "supermarketloan/mgr/loanapply/submitCustomerTask";
+            data = {
+              submitType: this.submitType,
+              loanApiIdItem: this.getLoanApiIdItem()
+            };
+          }
+          let userInfo = this.$api.getLStorage("loanuser", "decode");
+          let param = {
+            param: {
+              sessionId: userInfo ? userInfo.sessionId : "",
+              ...data,
+              ...this.formData
+            }
+          };
+          if (this.$parent.isSelectionAll) param.param.choiceItem = "";
+          this.$api.vkcPost(postUrl, param, res => {
+            this.$api.hideLoading();
+            this.dialogVisible = false;
+            this.$message({
+              message: "提交成功！",
+              type: "success"
+            });
+            // if (this.customerType === "1") {
+            // window.location.href = res;
+            // } else {
+            //     this.$alert("提交成功", {
+            //         showClose: false,
+            //         callback: action => {
+            //             this.dialogVisible = false;
+            //         }
+            //     });
+            // }
+          });
+        }else {//婚纱摄影的
+          var param={
+            param:{
+              sessionId:this.$api.getLStorage("loanuser","decode").sessionId,
+              submitPermType:"1",
+              choiceItem:this.formData.choiceItem,
+              jobDescription:this.service.jobDescription,
+              businessTypeId:this.service.businessTypeId,
+              metaItems:this.service.metaItems
+            }
+          };
+          this.$api.vkcPost("supermarketloan/mgr/loanapply/submitCustomerServiceTask",
+            param
+          , res => {
+            this.$api.hideLoading();
+            this.dialogVisible = false;
+            this.$message({
+              message: "提交成功！",
+              type: "success"
+            });
+            //this.$parent.getOrderList();
+          });
+        }
+
+      }
+    }
+  };
+</script>
+
+

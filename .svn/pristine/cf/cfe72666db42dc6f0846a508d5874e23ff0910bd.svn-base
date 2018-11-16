@@ -1,0 +1,215 @@
+<template>
+    <div>
+        <el-form :inline="true">
+            <el-form-item label="业务名称：">
+                <el-input v-model="businessName" placeholder="请输入业务名称"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="getBusinessList()">查询</el-button>
+                <el-button type="primary" @click="setBusiness($event)">新增业务</el-button>
+            </el-form-item>
+        </el-form>
+        <el-table :data="tableData" stripe border>
+            <el-table-column type="index" width="50" :index="IndexMethod" label="序号"></el-table-column>
+            <el-table-column width="200" prop="id" label="业务ID"></el-table-column>
+            <el-table-column prop="businessName" label="业务名称"></el-table-column>
+            <el-table-column label="当前状态">
+                <template slot-scope="scope">
+                    <span :style="scope.row.onlineState==='0' ? '':{color:'red'}">{{scope.row.onlineState==='0'?'使用中':'已禁用'}}</span>
+                </template>
+            </el-table-column>
+            <el-table-column label="操作">
+                <template slot-scope="scope">
+                    <el-button type="text" @click="confirmChangeState(scope.row)">
+                        {{scope.row.onlineState==='0'?'禁用':'启用'}}
+                    </el-button>
+                    <el-button type="text" @click="setBusiness($event,scope.row)">编辑</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <div class="mg15 mg-r0 pull-right" v-show="totalCount>0">
+            <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange"
+                           :current-page="pageIndex" :page-sizes="[10, 20, 50, 100]" :page-size="param.pageSize"
+                           layout="total, sizes, prev, pager, next, jumper" :total="totalCount"></el-pagination>
+        </div>
+        <el-dialog :title="title" :visible.sync="dialogFormVisible" center width="550px">
+            <div class="text-center">
+                <el-form :model="formData" ref="formData" :rules="rules" label-width="100px" style="width:500px">
+                    <el-form-item label="业务名称：" prop="businessName">
+                        <el-input v-model="formData.businessName" placeholder="请输入业务名称"></el-input>
+                    </el-form-item>
+                </el-form>
+
+            </div>
+            <div slot="footer">
+                <el-button @click="dialogFormVisible = false">取 消</el-button>
+                <el-button type="primary" @click="addBusiness">确 定</el-button>
+            </div>
+        </el-dialog>
+    </div>
+</template>
+
+<script>
+    import businessList from "./businessList.vue";
+
+    export default {
+        data() {
+            return {
+                title: "新增业务",
+                formData: {
+                    businessName: "",
+                },
+                businessName: "",
+                dialogFormVisible: false,
+                tableData: [],
+                totalCount: 0,
+                pageTotal: 0,
+                pageIndex: 1,
+                pageSize: 10,
+                rules: {
+                    businessName: [
+                        {required: true, message: "请输入业务名称", trigger: "blur"},
+                        {min: 2, max: 6, message: '长度需控制在6个字符之内', trigger: 'blur'},
+                        {pattern:/^[\u4e00-\u9fa5]+$/,trigger: 'blur',message: '只允许输入中文'}
+                    ],
+                }
+            };
+        },
+        computed: {
+            param() {
+                return {
+                    businessName: this.businessName,
+                    pageIndex: this.pageIndex,
+                    pageSize: this.pageSize
+                };
+            }
+        },
+        methods: {
+            getBusinessList() {
+                //加载列表页
+                this.$api.vkcPost2(
+                    "supermarketloan/crm/businesstype/page",
+                    this.param,
+                    res => {
+                        this.tableData = res.data;
+                        this.totalCount = res.totalCount;
+                        this.pageTotal = res.pageTotal;
+                    },
+                    "getAllData"
+                );
+            },
+            setBusiness(event, row) {
+                if(this.$refs.formData){
+                    this.$refs.formData.clearValidate();//清空之前的验证结果
+                }
+                this.dialogFormVisible = true;
+                if (row) {
+                    this.title = "编辑业务";
+                    this.formData = row;
+                } else {
+                    this.title = "新增业务";
+                    this.formData = {}
+                }
+            },
+            addBusiness() {
+                this.$refs.formData.clearValidate();
+                console.log(this.$refs.formData);
+                if (this.formData.id) {
+                    //update操作
+                    this.$refs.formData.validate(valid => {
+                        if (valid) {
+                            this.$api.vkcPost2("supermarketloan/crm/businesstype/update",
+                                {
+                                    id: this.formData.id,
+                                    businessName: this.formData.businessName
+                                }, res => {
+                                    this.dialogFormVisible = false;
+                                    this.$message({
+                                        message: '更新成功',
+                                        type: 'success'
+                                    });
+                                    this.getBusinessList();
+                                });
+                        } else {
+                            return false;
+                        }
+                    });
+                } else {
+                    //add操作
+                    this.$refs.formData.validate(valid => {
+                        if (valid) {
+                            this.$api.vkcPost2("supermarketloan/crm/businesstype/add",
+                                {
+                                    businessName: this.formData.businessName
+                                }, res => {
+                                    this.dialogFormVisible = false;
+                                    this.$message({
+                                        message: '新增成功',
+                                        type: 'success'
+                                    });
+                                    this.getBusinessList();
+                                });
+                        } else {
+                            return false;
+                        }
+                    });
+                }
+            },
+            confirmChangeState(row) {
+                let keyMsg = row.onlineState == "0" ? "禁用" : "启用";
+                let hintMsg = "确定要" + keyMsg + "该角色吗？";
+                this.$confirm(hintMsg, "提示", {
+                    confirmButtonText: "确定",
+                    cancelButtonText: "取消",
+                    type: "warning"
+                })
+                    .then(() => {
+                        this.changeRoleState(row);
+                    })
+                    .catch(() => {
+                        this.$message({
+                            type: "info",
+                            message: "已取消" + keyMsg
+                        });
+                    });
+            },
+            changeRoleState(row) {
+                //修改业务状态
+                row.onlineState === "0"
+                    ? (row.onlineState = "1")
+                    : (row.onlineState = "0");
+                let keyMsg = row.onlineState == "0" ? "启用" : "禁用";
+                this.$api.vkcPost2(
+                    "supermarketloan/crm/businesstype/enableDisable",
+                    {
+                        id: row.id,
+                        onlineState: row.onlineState
+                    },
+                    res => {
+                        this.$message({
+                            type: "success",
+                            message: keyMsg + "成功!"
+                        });
+                    }
+                );
+            },
+            handleSizeChange(val) {
+                this.pageIndex = 1;
+                this.pageSize = val;
+                this.getBusinessList();
+            },
+            handleCurrentChange(val) {
+                this.pageIndex = val;
+                this.getBusinessList();
+            },
+            IndexMethod(index) {
+                let pIndex = this.pageIndex;
+                let pRowCounte = this.pageSize;
+                return (pIndex - 1) * pRowCounte + index + 1;
+            }
+        },
+        mounted() {
+            this.getBusinessList();
+        }
+    };
+</script>

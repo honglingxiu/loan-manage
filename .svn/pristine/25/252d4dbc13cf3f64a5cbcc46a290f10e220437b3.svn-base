@@ -1,0 +1,160 @@
+<template>
+    <div class="ms-doc">
+        <span class="color">数据简报</span>
+        <div class="underline"></div>
+        <div>
+            <span class="titleLeft1">API</span>
+            <table class="tableTop">
+                <tr>
+                    <td>今日申请数</td>
+                    <td>昨日申请数</td>
+                    <td>当月申请数</td>
+                    <td>累计申请数</td>
+                </tr>
+                <tr>
+                    <td class="numbers">{{API.limitToday}}</td>
+                    <td class="numbers">{{API.limitYesterday}}</td>
+                    <td class="numbers">{{API.limitMonth}}</td>
+                    <td class="numbers">{{API.limitAll}}</td>
+                </tr>
+                <tr>
+                    <td class="top">今日成功数</td>
+                    <td class="top">昨日成功数</td>
+                    <td class="top">当月成功数</td>
+                    <td class="top">累计成功数</td>
+                </tr>
+                <tr>
+                    <td class="numbers">{{API.limitTodaySuss}}</td>
+                    <td class="numbers">{{API.limitYesterdaySuss}}</td>
+                    <td class="numbers">{{API.limitMonthSuss}}</td>
+                    <td class="numbers">{{API.limitAllSuss}}</td>
+                </tr>
+            </table>
+            <span class="titleLeft2">聚合</span>
+            <table class="tableBottom">
+                <tr>
+                    <td class="top">今日申请数</td>
+                    <td class="top">昨日申请数</td>
+                    <td class="top">当月申请数</td>
+                    <td class="top">累计申请数</td>
+                </tr>
+                <tr>
+                    <td class="numbers">{{MIX.limitTodayMix}}</td>
+                    <td class="numbers">{{MIX.limitYesterdayMix}}</td>
+                    <td class="numbers">{{MIX.limitMonthMix}}</td>
+                    <td class="numbers">{{MIX.limitAllMix}}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</template>
+
+<script>
+export default {
+    data() {
+        return {
+            API: {},
+            MIX: {},
+            sessionId: ""
+        };
+    },
+    created() {
+        let userInfo = this.$api.getLStorage("loanuser", "decode");
+        userInfo ? (this.sessionId = userInfo.sessionId) : "";
+        let param = {
+            param: {
+                sessionId: this.sessionId
+            }
+        };
+        this.$api.vkcPost("supermarketloan/mgr/homepage", param, res => {
+            this.API = res.API;
+            this.MIX = res.MIX;
+        });
+    }
+};
+</script>
+
+<style scoped>
+.ms-doc {
+    width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+}
+.ms-doc h3 {
+    padding: 9px 10px 10px;
+    margin: 0;
+    font-size: 14px;
+    line-height: 17px;
+    background-color: #f5f5f5;
+    border: 1px solid #d8d8d8;
+    border-bottom: 0;
+    border-radius: 3px 3px 0 0;
+}
+.ms-doc article {
+    padding: 45px;
+    word-wrap: break-word;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+}
+.ms-doc article h1 {
+    font-size: 32px;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+}
+.ms-doc article p {
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+table tr td {
+    padding-left: 100px;
+}
+.numbers {
+    padding-top: 10px;
+    padding-bottom: 15px;
+    color: #4db3ff;
+    font-size: 20px;
+    padding-left: 110px;
+}
+.top {
+    padding-top: 25px;
+}
+.underline {
+    background-color: black;
+    padding-left: 25px;
+    width: 100%;
+    height: 1px;
+    margin-top: 10px;
+}
+.tableTop {
+    margin-left: 90px;
+    padding-top: 15px;
+    border-bottom: 1px dashed #000;
+    width: 95%;
+}
+.titleLeft1 {
+    font-size: 25px;
+    padding-top: 50px;
+    display: block;
+    position: absolute;
+    font-weight: bold;
+}
+.titleLeft2 {
+    font-size: 26px;
+    padding-top: 50px;
+    display: block;
+    position: absolute;
+    font-weight: bolder;
+}
+.tableBottom {
+    margin-left: 90px;
+    padding-top: 20px;
+    width: 95%;
+    margin-bottom: 50px;
+}
+.color {
+    color: #4db3ff;
+}
+</style>

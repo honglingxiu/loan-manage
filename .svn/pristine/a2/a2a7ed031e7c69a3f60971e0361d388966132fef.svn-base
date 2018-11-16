@@ -1,0 +1,184 @@
+<template>
+  <div>
+    <el-form :model="formData" :inline="true">
+      <el-form-item label="规则名称：">
+        <el-input v-model="formData.ruleName" placeholder="请输入规则名称" class="width200"></el-input>
+      </el-form-item>
+      <el-form-item label="业务类型：">
+        <jb-businessTypes v-model="formData.businessTypeId" :show="true"></jb-businessTypes>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="getRulesList()">查询</el-button>
+        <el-button type="primary" @click="setRules()">新增规则</el-button>
+      </el-form-item>
+    </el-form>
+
+    <el-table :data="tableData" stripe border>
+      <el-table-column type="index" width="50" :index="$api.IndexMethod(formData.pageIndex,formData.pageSize)" label="序号"></el-table-column>
+      <el-table-column prop="ruleName" label="规则名称"></el-table-column>
+      <el-table-column prop="description" label="说明"></el-table-column>
+      <el-table-column prop="score" label="总分值"></el-table-column>
+      <el-table-column prop="businessName" label="业务类型"></el-table-column>
+      <el-table-column prop="noteName" label="修改人"></el-table-column>
+      <el-table-column prop="createDate" label="修改时间"></el-table-column>
+      <el-table-column label="当前状态">
+        <template slot-scope="scope">
+          <span :style="scope.row.onlineState==='1'?{color:'red'}:''">{{scope.row.onlineState==='0'?'使用中':'已禁用'}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作">
+        <template slot-scope="scope">
+          <el-button type="text" @click="confirmChangeState(scope.row)">{{scope.row.onlineState==='0'?'禁用':'启用'}}
+          </el-button>
+          <el-button type="text" @click="setRules(scope.row)">编辑</el-button>
+          <el-button type="text" @click="$emit('viewRules',scope.row)">查看项次</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <div class="mg15 mg-r0 pull-right" v-show="formData.totalCount>0">
+      <jb-pagination @getList="getRulesList" :totalCount="formData.totalCount"></jb-pagination>
+    </div>
+
+    <el-dialog :title="title" :visible.sync="dialogVisible" width="600px" center>
+      <el-form :model="dialogForm" :rules="rules" ref="ruleForm" label-width="100px">
+        <el-form-item label="规则名称：" prop="ruleName">
+          <el-input v-model.trim="dialogForm.ruleName" placeholder="请输入规则名称" class="width300"></el-input>
+        </el-form-item>
+        <el-form-item label="业务类型：" prop="businessTypeId">
+          <jb-businessTypes v-model="dialogForm.businessTypeId"></jb-businessTypes>
+        </el-form-item>
+        <el-form-item label="说明：" prop="description">
+          <el-input type="textarea" v-model.trim="dialogForm.description" placeholder="请输入说明信息" :rows="6"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer">
+        <el-button @click="dialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="confirm()">确 定</el-button>
+      </span>
+    </el-dialog>
+
+  </div>
+</template>
+<script>
+export default {
+    data() {
+        return {
+            dialogVisible: false,
+            dialogForm: {},
+            handleType: "add",
+            formData: {
+                ruleName: "",
+                businessTypeId: "",
+                pageIndex: 1,
+                pageSize: 10,
+                totalCount: 0
+            },
+            tableData: [],
+            title: "",
+            rules: {
+                ruleName: [{ required: true, message: "请输入业务名称", trigger: "blur" }],
+                businessTypeId: [{ required: true, message: "请选择业务类型", trigger: "blur" }],
+                description: [{ required: true, message: "请输入说明信息", trigger: "blur" }]
+            }
+        };
+    },
+    watch: {
+        "dialogForm.businessTypeId"(val) {
+            //业务类型验证不通过，重新选择后移除验证
+            if (val) {
+                if (this.$refs.ruleForm) {
+                    this.$refs.ruleForm.clearValidate();
+                }
+            }
+        }
+    },
+    methods: {
+        setRules(row) {
+            if (row) {
+                this.handleType = "edit";
+                this.title = "编辑规则";
+                this.dialogForm = { ...row };
+            } else {
+                this.handleType = "add";
+                this.title = "新增规则";
+                this.dialogForm = {};
+            }
+            if (this.$refs.ruleForm) {
+                this.$refs.ruleForm.clearValidate();
+            }
+            this.dialogVisible = true;
+        },
+        confirm() {
+            this.$refs.ruleForm.validate(valid => {
+                if (valid) {
+                    this.submitRules();
+                } else {
+                    console.log("error submit!!");
+                    return false;
+                }
+            });
+        },
+        submitRules() {
+            let url = "";
+            url = this.handleType === "add" ? "supermarketloan/crm/qualitycontrol/addRules" : "supermarketloan/crm/qualitycontrol/updateRules";
+            console.log(this.dialogForm);
+            this.$api.vkcPost2(url, this.dialogForm, res => {
+                if (res) {
+                    this.$message({
+                        message: this.handleType === "add" ? "添加成功！" : "修改成功！",
+                        type: "success",
+                        duration: 1000
+                    });
+                    this.getRulesList();
+                    this.dialogVisible = false;
+                }
+            });
+        },
+        confirmChangeState(row) {
+            let keyMsg = row.onlineState == "0" ? "禁用" : "启用";
+            let hintMsg = "确定" + keyMsg + "？";
+            this.$confirm(hintMsg, "提示", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                type: "warning"
+            })
+                .then(() => {
+                    this.changeWidgetState(row);
+                })
+                .catch(() => {});
+        },
+        changeWidgetState(row) {
+            let param = {
+                id: row.id,
+                onlineState: row.onlineState === "0" ? "1" : "0"
+            };
+            this.$api.vkcPost2("supermarketloan/crm/qualitycontrol/updateRules", param, res => {
+                if (res) {
+                    this.$message({
+                        message: "修改成功",
+                        type: "success",
+                        duration: 1000
+                    });
+                    row.onlineState === "0" ? (row.onlineState = "1") : (row.onlineState = "0");
+                }
+            });
+        },
+        getRulesList(pageIndex, pageSize) {
+            this.formData.pageIndex = pageIndex || this.formData.pageIndex;
+            this.formData.pageSize = pageSize || this.formData.pageSize;
+            this.$api.vkcPost2(
+                "supermarketloan/crm/qualitycontrol/findRules",
+                this.formData,
+                res => {
+                    this.tableData = res.data;
+                    this.formData.totalCount = res.totalCount;
+                },
+                "getAllData"
+            );
+        }
+    },
+    created() {
+        this.getRulesList();
+    }
+};
+</script>

@@ -1,0 +1,181 @@
+<template>
+    <div>
+        <el-button :type="btnType" @click="handleClick()" class="width100" :disabled="disabled">{{btnType==='primary'?"一键拨打":'挂 断'}}</el-button>
+        <small class="phone-state">{{stateWord}}</small>
+    </div>
+</template>
+<script>
+/* 
+拨打电话按钮组件
+props{
+    phoneData: 上传录音需要的数据
+    disabled:  是否禁用按钮
+}
+$emit{
+    successConnect :  录音上传成功回调
+}
+使用例子：    <jb-phoneBtn :phoneData="phoneData" @successConnect="successConnect"></jb-phoneBtn>
+*/
+import { mapGetters, mapActions } from "vuex";
+export default {
+    name: "jb-phoneBtn",
+    props: {
+        phoneData: Object,
+        disabled: {
+            type: Boolean,
+            default: false
+        }
+    },
+    watch: {
+        phoneData(newVal, oldVal) {
+            oldVal ? (this.lastPhoneData = oldVal) : "";
+        }
+    },
+    data() {
+        return {
+            pageLineNo: "",
+            lastPhoneData: "",
+            btnType: "primary", //primary danger
+            stateWord: "",
+            serviceStartTime: "",
+            serviceEndTime: ""
+        };
+    },
+    computed: {
+        ...mapGetters(["soundConfig"])
+    },
+    methods: {
+        async Online() {
+            if (window.registerId) return;
+            let config = await this.$api.getSoundConfig();
+            // Phone.Online(语音服务器地址, 分机号码, 分机密码);
+            for (const item of config.agentItem) {
+                let flag = await this.$api.agentreg(config.accountcode, item.agentId, config.agentServer); //true-注册；false-未注册
+                if (flag) continue;
+                let OnlineFlag = Phone.Online(config.server, item.agentId, item.agentPwd);
+                if (OnlineFlag) {
+                    window.registerId = item.agentId;
+                    this.$alert("座席号" + item.agentId + "上线成功", { showClose: false });
+                    return;
+                }
+            }
+            if (!window.registerId) this.$alert("暂无座席号", { showClose: false });
+        },
+        resetBtn() {
+            this.btnType = "primary";
+            this.stateWord = "";
+        },
+        //上传录音记录
+        async addSoundRecord(lastPhoneData) {
+            // console.log("正在上传录音记录");
+            let phoneData = lastPhoneData || this.phoneData;
+            let soundId = await this.$api.getRecIdByCaller(window.registerId, phoneData.phone, this.soundConfig.mp3IdServer);
+            // console.log(soundId);
+            let soundTimeLength = await this.$api.getBillsec(soundId, this.soundConfig.mp3IdServer);
+            // console.log("录音时长", soundTimeLength);
+            let param = {
+                ...phoneData,
+                serviceStartTime: this.serviceStartTime,
+                serviceEndTime: this.serviceEndTime,
+                soundTimeLength: soundTimeLength,
+                soundId: soundId
+            };
+            // console.log(param);
+            this.$api.vkcPost2("supermarketloan/crm/soundserver/addSoundRecord", param, res => {
+                this.$emit("successConnect");
+            });
+        },
+        // 打电话相关
+        handleClick() {
+            if (this.btnType === "primary") {
+                this.call(this.phoneData.phone);
+                return;
+            }
+            this.hangUp();
+        },
+        successCall(LineNo, ToRTPIP, ToRTPPort) {
+            fnOnSuccessToConnect(LineNo, ToRTPIP, ToRTPPort);
+            window.connectLineNo = LineNo;
+            this.serviceStartTime = this.$api.getNowDate();
+            this.stateWord = "电话正在接通中";
+            this.$emit("successConnect");
+        },
+        call(phoneNo) {
+            if (window.registerId === "") {
+                this.$alert("暂无座席号", { showClose: false });
+                return;
+            }
+            if (Phone.BtnDial_onclick(phoneNo)) {
+                OnConnecting = LineNo => {
+                    //呼叫事件
+                    fnOnConnecting(LineNo);
+                    this.pageLineNo = LineNo;
+                    this.btnType = "danger";
+                    this.stateWord = "等待接听...";
+                };
+                OnSuccessToConnect = (LineNo, ToRTPIP, ToRTPPort) => {
+                    //呼叫成功事件
+                    if (window.connectLineNo === "") {
+                        this.successCall(LineNo, ToRTPIP, ToRTPPort);
+                        return;
+                    }
+                    if (window.connectLineNo !== LineNo) {
+                        if (Phone.BtnHangUp_onclick(window.connectLineNo)) {
+                            this.serviceEndTime = this.$api.getNowDate();
+                            this.addSoundRecord(this.lastPhoneData);
+                            this.successCall(LineNo, ToRTPIP, ToRTPPort);
+                        }
+                    }
+                };
+                OnDisconnectCall = LineNo => {
+                    //呼叫成功后对方挂断事件
+                    fnOnDisconnectCall(LineNo);
+                    if (this.pageLineNo === LineNo) {
+                        this.hangUp();
+                        return;
+                    }
+                    this.hangUp(LineNo);
+                };
+            }
+        },
+        hangUp(LineNo) {
+            //已切换到下一详情页，呼叫下一个号码还未接通，上一号码对方挂断
+            if (typeof LineNo !== "undefined") {
+                if (Phone.BtnHangUp_onclick(LineNo)) {
+                    this.serviceEndTime = this.$api.getNowDate();
+                    this.addSoundRecord(this.lastPhoneData);
+                    window.connectLineNo = "";
+                    return;
+                }
+            }
+            //仍在当前详情页，客服主动挂断或者对方挂断
+            if (Phone.BtnHangUp_onclick(this.pageLineNo)) {
+                this.btnType = "primary";
+                this.stateWord = "";
+                this.$message({
+                    message: "通话结束",
+                    type: "warning"
+                });
+                if (window.connectLineNo !== "") {
+                    this.serviceEndTime = this.$api.getNowDate();
+                    this.addSoundRecord();
+                }
+                if (this.pageLineNo === window.connectLineNo) window.connectLineNo = "";
+            }
+        }
+    },
+    mounted: function() {
+        this.Online();
+        this.$nextTick(function() {
+            OnRequestFailureResponse = (LineNo, StatusCode, ReasonPhrase) => {
+                fnOnRequestFailureResponse(LineNo, StatusCode, ReasonPhrase);
+                this.resetBtn();
+                this.$message({
+                    message: "通话结束",
+                    type: "warning"
+                });
+            };
+        });
+    }
+};
+</script>

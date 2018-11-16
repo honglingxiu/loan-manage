@@ -1,0 +1,71 @@
+<template>
+    <div>
+        <el-table :data="allData.before8Datas" stripe width="100%" border :row-style="{height:'50px'}" :header-cell-style="{background:'#409EFF',color:'#fff',height:'50px'}">
+            <el-table-column prop="range" label="排名" width="120" align="center"></el-table-column>
+            <el-table-column prop="productName" label="产品名称" align="center"></el-table-column>
+            <el-table-column prop="bidAmount" label="当前价格（元）" align="center"></el-table-column>
+        </el-table>
+        <h4 class="mg15 mg-l0" v-if="allData.after8Datas.length>0">以下排名前端页面不展示：</h4>
+        <el-table :data="allData.after8Datas" v-if="allData.after8Datas.length>0" stripe width="100%" border :row-style="{height:'50px'}" :show-header="false">
+            <el-table-column prop="range" width="120" align="center"></el-table-column>
+            <el-table-column prop="productName" align="center"></el-table-column>
+            <el-table-column prop="bidAmount" align="center"></el-table-column>
+        </el-table>
+        <div class="mg15 mg-r0 pull-right" v-if="allData.after8Datas.length>0">
+            <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="param.pageIndex" :page-sizes="[10, 20, 50, 100]" :page-size="param.pageSize" layout="total, sizes, prev, pager, next, jumper" :total="totalCount"></el-pagination>
+        </div>
+    </div>
+</template>
+
+<script>
+export default {
+    components: {},
+    data() {
+        return {
+            param: {
+                pageIndex: 1,
+                pageSize: 10,
+                eventMarketId: '',
+                minAmount: 0,
+                maxAmount: 0
+            },
+            totalCount:0,
+            allData: {
+                before8Datas:[],
+                after8Datas:[]
+            }
+        };
+    },
+    methods: {
+        getAmountList() {
+            // console.log({param:this.param});
+            this.$api.vkcPost("supermarketloan/mgr/eventmarket/productrange", {param:this.param}, res => {
+                // console.log(res);
+                this.totalCount = res.totalCount;
+                this.allData = res.data;
+            },'all');
+        },
+        handleSizeChange(val) {
+            // console.log(`每页 ${val} 条`);
+            this.param.pageSize = val;
+            this.getAmountList();
+        },
+        handleCurrentChange(val) {
+            // console.log(`当前页: ${val}`);
+            this.param.pageIndex = val;
+            this.getAmountList();
+        }
+    },
+    created() {
+        let d = this.$api.getSStorage('productRink');
+        if(!d) {this.$router.back();return;};
+        this.param.eventMarketId = d.id;
+        let amountStr = d.amount;
+        let amountArr = amountStr.split("-");
+        this.param.minAmount = amountArr[0];
+        this.param.maxAmount = amountArr[1];
+        this.$store.commit("CHANGE_TITLE", ["当前选择金额范围", amountStr]);
+        this.getAmountList();
+    }
+};
+</script>

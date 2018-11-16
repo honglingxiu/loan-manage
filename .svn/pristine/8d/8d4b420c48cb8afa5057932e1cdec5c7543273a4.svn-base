@@ -1,0 +1,247 @@
+<template>
+    <div>
+        <div class="detail2-wrap">
+            <div class="flex">
+                <div class="flex align-middle basicinfo col-8" v-if="soundDetail.soundRecord">
+                    <ul class="col-6">
+                        <li class="row clearfix lh30">
+                            <label class="col-4 text-right">客户号码： </label>
+                            <span class="col-8">{{soundDetail.soundRecord.phone}}</span>
+                        </li>
+                        <li class="row clearfix lh30">
+                            <label class="col-4 text-right">操作客服： </label>
+                            <span class="col-8">{{soundDetail.soundRecord.noteName}}</span>
+                        </li>
+                        <li class="row clearfix lh30">
+                            <label class="col-4 text-right">服务开始时间： </label>
+                            <span class="col-8">{{soundDetail.soundRecord.serviceStartDate}}</span>
+                        </li>
+                        <li class="row clearfix lh30">
+                            <label class="col-4 text-right">处理结果： </label>
+                            <span class="col-8">{{dealResult}}</span>
+                        </li>
+                    </ul>
+                    <div class="col-6">
+                        <audio controls :src="soundDetail.soundRecord.soundPath" style="width:100%"></audio>
+                    </div>
+                </div>
+                <div class="applyinfo align-middle col-4" v-if="soundDetail.crmCustomerServiceOrder">
+                    <ul>
+                        <li class="row clearfix lh30">
+                            <label class="col-4 text-right">业务类型： </label>
+                            <span class="col-8">{{soundDetail.crmCustomerServiceOrder.businessName}}</span>
+                        </li>
+                        <li class="row clearfix lh30">
+                            <label class="col-4 text-right">申请产品： </label>
+                            <span class="col-8">{{soundDetail.crmCustomerServiceOrder.productName}}</span>
+                        </li>
+                        <li class="row clearfix lh30">
+                            <label class="col-4 text-right">申请金额： </label>
+                            <span class="col-8">{{soundDetail.crmCustomerServiceOrder.applyAmount}}</span>
+                        </li>
+                        <li class="row clearfix lh30">
+                            <label class="col-4 text-right">申请期限： </label>
+                            <span class="col-8">{{soundDetail.crmCustomerServiceOrder.applyDeadline+soundDetail.crmCustomerServiceOrder.applyDeadlineUnit}}</span>
+                        </li>
+                        <li class="row clearfix lh30">
+                            <label class="col-4 text-right">申请时间： </label>
+                            <span class="col-8">{{soundDetail.crmCustomerServiceOrder.applyDate}}</span>
+                        </li>
+
+                    </ul>
+                </div>
+            </div>
+            <div class="flex mg-t20">
+                <div class="col-8 mg-r20">
+                    <v-maininfo ref="maininfo"></v-maininfo>
+                </div>
+                <div class="col-4">
+                    <v-communicate ref="communicate"></v-communicate>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-fixed">
+            <div class="flex align-middle space-around footer-wrap">
+                <el-button type="primary" class="footer-btn" @click="$parent.currentView='soundList'">取消</el-button>
+                <el-button type="primary" class="footer-btn" @click="dialogVisible=true">修改处理结果</el-button>
+                <el-button type="primary" class="footer-btn" @click="reviseDealResults('3')">设为无效录音</el-button>
+                <el-button type="primary" class="footer-btn" @click="confirmRevise()">F9 确认无误，保存提交下一个</el-button>
+            </div>
+        </div>
+        <el-dialog :visible.sync="dialogVisible" width="600px">
+            <div slot="title">
+                <span>修改处理意见</span>
+                <hr>
+            </div>
+            <el-form>
+                <el-form-item label="处理结果：">
+                    <el-radio-group v-model="dealResults">
+                        <el-radio label="1">通过</el-radio>
+                        <el-radio label="2">不通过</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="处理意见：" v-show="dealResults==='2'">
+                    <el-input type="textarea" v-model="dealTxt" :rows="4" class="width300"></el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="text-center">
+                <el-button @click="dialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="reviseDealResults(dealResults)">确 定</el-button>
+            </div>
+        </el-dialog>
+    </div>
+</template>
+
+<script>
+import maininfo from "./mainInfo";
+import communicate from "./communicate";
+import { mapGetters, mapActions } from "vuex";
+export default {
+    components: {
+        "v-maininfo": maininfo,
+        "v-communicate": communicate
+    },
+    data() {
+        return {
+            dialogVisible: false,
+            dealResults: "1",
+            dealTxt: ""
+        };
+    },
+    computed: {
+        dealResult() {
+            switch (this.soundDetail.soundRecord.dealResult) {
+                case "0":
+                    return "待跟进";
+                case "1":
+                    return "通过";
+                case "2":
+                    return "不通过";
+                case "3":
+                    return "无效录音";
+                default:
+                    return "";
+            }
+        },
+        ...mapGetters(["soundRow", "soundDetail", "soundFormData"])
+    },
+    methods: {
+        ...mapActions(["getSoundDetail"]),
+        async getAllDetail() {
+            await this.$refs.communicate.getCommunicate();
+            await this.getSoundDetail();
+            return true;
+        },
+        // code 0未处理 1通过 2不通过 3无效录音
+        reviseDealResults(code) {
+            let param = {
+                id: this.soundRow.id,
+                dealResult: code,
+                remark: code === "2" ? this.dealTxt : ""
+            };
+            this.$api.vkcPost2(
+                "supermarketloan/crm/sound/UpdateSoundDetail",
+                param,
+                res => {
+                    if (res.code === "0") {
+                        this.dialogVisible = false;
+                        if (code === "3") {
+                            this.$api.showLoading("设置成功！ 正在获取下一条数据...");
+                            setTimeout(() => {
+                                this.getNextDetail().then(res => {
+                                    this.$api.hideLoading();
+                                });
+                            }, 1000);
+                        } else {
+                            this.$message({
+                                message: "修改成功！",
+                                type: "success",
+                                duration: 1000
+                            });
+                            this.getAllDetail();
+                        }
+                    }
+                },
+                "getAllData"
+            );
+        },
+        getNextDetail() {
+            return new Promise(resolve => {
+                this.soundFormData.id = this.soundRow.id;
+                console.log(this.soundFormData);
+                this.$api.vkcPost2("supermarketloan/crm/sound/findNextSound", this.soundFormData, res => {
+                    let soundRow = {
+                        customerServiceOrderId: res.soundRecord.customerServiceOrderId,
+                        id: res.soundRecord.id
+                    };
+                    this.$store.commit("GET_SOUND_ROW", soundRow);
+                    this.$store.commit("GET_SOUND_DETAIL", res);
+                    this.$refs.communicate.getCommunicate().then(res => {
+                        resolve(true);
+                    });
+                });
+            });
+        },
+        getScoreArray(tableData) {
+            let scoreArray = [];
+            for (const item of tableData) {
+                scoreArray.push({
+                    itemScore: parseFloat(item.score),
+                    qualityControlRuleId: item.qualityControlRuleId,
+                    customerServiceOrderId: this.soundRow.customerServiceOrderId,
+                    qualityControlItemId: item.id
+                });
+            }
+            return scoreArray;
+        },
+        confirmRevise() {
+            this.$api.showLoading("正在保存...");
+            let param = {
+                id: this.soundRow.id,
+                score: this.$refs.maininfo.totalScore,
+                scoreArray: this.getScoreArray(this.$refs.maininfo.tableData)
+            };
+            this.$api.vkcPost2(
+                "supermarketloan/crm/sound/UpdateSoundDetail",
+                param,
+                res => {
+                    if (res.code === "0") {
+                        this.$api.showLoading("保存成功！ 正在获取下一条数据...");
+                        setTimeout(() => {
+                            this.getNextDetail().then(res => {
+                                this.$api.hideLoading();
+                            });
+                        }, 1000);
+                    }
+                },
+                "getAllData"
+            );
+        }
+    },
+    created() {
+        $(document).keydown(event => {
+            if (event.keyCode == 120) {
+                if (this.$parent.currentView === "soundDetail") this.confirmRevise();
+            }
+        });
+    }
+};
+</script>
+<style scoped>
+.footer-wrap {
+    width: 80%;
+    height: 90px;
+    margin: 0 10%;
+}
+.footer-btn {
+    padding: 15px;
+    min-width: 200px;
+}
+.applyinfo {
+    background: #999;
+    padding: 10px 10px 10px 50px;
+    color: #fff;
+}
+</style>
+

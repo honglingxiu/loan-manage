@@ -1,0 +1,236 @@
+<template>
+    <div>
+        <div class="flex detail2-wrap">
+            <div class="row col-8 mg-r20">
+                <div class="flex border999 pd15">
+                    <div class="flex align-middle col-7 text-center">
+                        <strong class="col-6 fs20">
+                            {{workListDetail.phone}}
+                        </strong>
+                        <jb-phoneBtn class="col-6 relative" ref="phoneBtn" :phoneData="phoneData"></jb-phoneBtn>
+                    </div>
+                    <ul class="col-5 pd-l20" style="border-left:1px solid #999">
+                        <li class="row clearfix lh30">
+                            <label class="col-4 text-right">注册平台： </label>
+                            <span class="col-8">{{workListDetail.platformType}}</span>
+                        </li>
+                        <li class="row clearfix lh30">
+                            <label class="col-4 text-right">注册渠道： </label>
+                            <span class="col-8">{{workListDetail.promotionChannel}}</span>
+                        </li>
+                        <li class="row clearfix lh30">
+                            <label class="col-4 text-right">注册时间： </label>
+                            <span class="col-8">{{workListDetail.registDate}}</span>
+                        </li>
+                    </ul>
+                </div>
+                <v-maininfo ref="maininfo" class="mg-t20"></v-maininfo>
+            </div>
+            <div class="col-4">
+                <v-submitRecord ref="submitRecord"></v-submitRecord>
+            </div>
+        </div>
+
+        <div class="footer-fixed">
+            <div v-if="workListDetail.userType==='customerService'" class="flex align-middle space-around footer-wrap">
+                <strong class="cfff">处理结果</strong>
+                <el-button type="primary" @click="getNextDetail()" class="footer-btn">通过</el-button>
+                <el-button type="primary" @click="dialogVisible=true" class="footer-btn">不通过</el-button>
+                <div style="width:1px;height:50px;background:#fff"></div>
+                <el-button type="primary" @click="$parent.handleBack()" class="footer-btn">取消</el-button>
+                <el-button type="primary" @click="sendSms()" class="footer-btn">发送短信（F7）</el-button>
+                <el-button type="primary" @click="confirmRevise()" class="footer-btn">确认无误，保存提交下一个（F9）</el-button>
+            </div>
+            <div v-else class="flex align-middle space-around footer-wrap">
+                <el-button type="primary" @click="$parent.handleBack()" class="footer-btn">取消</el-button>
+                <el-button type="primary" @click="dialogVisible=true" class="footer-btn">修改处理结果</el-button>
+                <el-button type="primary" @click="confirmRevise()" class="footer-btn">确认无误，保存提交下一个（F9）</el-button>
+            </div>
+        </div>
+        <jb-smsTemplate ref='smsTemplate' v-model="smsValue" title="发送短信" templateType='2' @handConfirm="confirmSendSms"></jb-smsTemplate>
+        <el-dialog :visible.sync="dialogVisible" width="600px">
+            <div slot="title">
+                <span v-if="workListDetail.userType==='customerService'">填写处理意见</span>
+                <span v-else>修改处理意见</span>
+                <hr>
+            </div>
+            <div style="margin-top:-20px">
+                <el-input type="textarea" :rows="6" placeholder="请输入处理意见" v-model="dealForm.suggestion" v-if="workListDetail.userType==='customerService'"></el-input>
+                <el-form ref="dealForm" :model="dealForm" label-width="100px" v-else>
+                    <el-form-item label="处理结果：">
+                        <el-radio-group v-model="dealForm.dealResults">
+                            <el-radio label="1">通过</el-radio>
+                            <el-radio label="2">不通过</el-radio>
+                        </el-radio-group>
+                    </el-form-item>
+                    <el-form-item label="处理意见：">
+                        <el-input type="textarea" :rows="6" placeholder="请输入处理意见" v-model="dealForm.suggestion"></el-input>
+                    </el-form-item>
+                </el-form>
+            </div>
+
+            <div slot="footer" class="text-center">
+                <el-button @click="dialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="reviseDealResults()">确 定</el-button>
+            </div>
+        </el-dialog>
+    </div>
+</template>
+
+<script>
+import maininfo from "./maininfo";
+import submitRecord from "./submitRecord";
+import { mapGetters, mapActions } from "vuex";
+export default {
+    name: "jb-workListDetail",
+    components: {
+        "v-maininfo": maininfo,
+        "v-submitRecord": submitRecord
+    },
+    data() {
+        return {
+            dialogVisible: false,
+            smsDialog: false,
+            smsValue: "",
+            smsTemplate: "",
+            dealForm: {
+                dealResults: "1", // 0未处理 1通过 2不通过
+                suggestion: ""
+            }
+        };
+    },
+    computed: {
+        ...mapGetters(["workListRow", "workListDetail", "workListFormData"]),
+        phoneData() {
+            return {
+                phone: this.workListDetail.phoneHidden,
+                userType: this.workListDetail.userType,
+                taskId: this.workListRow.taskId,
+                customerServiceOrderId: this.workListRow.orderId || this.workListRow.id
+            };
+        }
+    },
+    methods: {
+        async getAllDetail() {
+            await this.$refs.submitRecord.getSubmitRecord();
+            await this.getWorkListDetail();
+            return true;
+        },
+        getNextRow() {
+            return new Promise(resolve => {
+                let param = {
+                    ...this.workListFormData,
+                    userType: this.workListDetail.userType,
+                    orderId: this.workListRow.orderId || this.workListRow.id
+                };
+                this.$api.vkcPost2("supermarketloan/crm/customerservice/manage/next", param, res => {
+                    resolve(res);
+                });
+            });
+        },
+        async getNextDetail() {
+            this.$api.showLoading("正在获取下一条数据...");
+            let nextRow = await this.getNextRow();
+            this.$store.commit("GET_WORKLIST_ROW", nextRow);
+            await this.getAllDetail();
+            this.$refs.phoneBtn.resetBtn();
+            setTimeout(() => {
+                this.$api.hideLoading();
+            }, 500);
+        },
+        reviseDealResults() {
+            let dealResult = this.workListDetail.userType === "customerService" ? "2" : this.dealForm.dealResults;
+            let param = {
+                taskId: this.workListRow.taskId,
+                customerServiceOrderId: this.workListRow.orderId || this.workListRow.id,
+                dealResult: dealResult,
+                remark: this.dealForm.suggestion
+            };
+            this.$api.vkcPost2(
+                "supermarketloan/crm/customerservice/manage/updateDealResult",
+                param,
+                res => {
+                    if (res.code === "0") {
+                        this.$message({
+                            message: "修改成功！",
+                            type: "success",
+                            duration: 1000
+                        });
+                        this.dialogVisible = false;
+                        this.workListDetail.userType === "customerService" ? this.getNextDetail() : "";
+                    }
+                },
+                "getAllData"
+            );
+        },
+        confirmRevise() {
+            let metaDataInfo = this.$refs.maininfo.workListDetail.metaDataInfo;
+            if (metaDataInfo.length === 0) {
+                this.getNextDetail();
+                return;
+            }
+            let param = {
+                orderId: this.workListRow.orderId || this.workListRow.id,
+                metaDataInfo: this.$refs.maininfo.workListDetail.metaDataInfo
+            };
+            this.$api.vkcPost2(
+                "supermarketloan/crm/customerservice/manage/updateUserInfo",
+                param,
+                res => {
+                    if (res.code === "0") {
+                        this.$message({
+                            message: "保存成功",
+                            type: "success"
+                        });
+                        this.getNextDetail();
+                    }
+                },
+                "getAllData"
+            );
+        },
+        sendSms() {
+            this.$refs.smsTemplate.dialogVisible = true;
+        },
+        confirmSendSms() {
+            this.$api.showLoading("正在发送，请稍后...");
+            let param = {
+                phone: this.workListRow.phoneHidden,
+                productName: this.workListRow.productName,
+                loanProductId: this.workListRow.loanProductId,
+                message: this.smsValue
+            };
+            this.$api.vkcPost2("supermarketloan/crm/addSms", param, res => {
+                setTimeout(() => {
+                    this.$api.hideLoading();
+                    res ? this.$alert("发送成功", { showClose: false }) : this.$alert("发送失败，请稍后重试", { showClose: false });
+                }, 300);
+            });
+        },
+        ...mapActions(["getWorkListDetail"])
+    },
+    created() {
+        $(document).keydown(event => {
+            if (event.keyCode == 120) {
+                if (this.$parent.showPage === "workListDetail") this.confirmRevise();
+            }
+        });
+        $(document).keydown(event => {
+            if (event.keyCode == 118) {
+                if (this.$parent.showPage === "workListDetail") this.sendSms();
+            }
+        });
+    }
+};
+</script>
+<style scoped>
+.footer-wrap {
+    width: 80%;
+    height: 90px;
+    margin: 0 10%;
+}
+.footer-btn {
+    padding: 15px;
+    min-width: 200px;
+}
+</style>
+

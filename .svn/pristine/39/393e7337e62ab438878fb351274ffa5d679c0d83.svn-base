@@ -1,0 +1,53 @@
+<template>
+  <el-pagination @current-change="handleCurrentChange" @size-change="handleSizeChange" :current-page="pageIndex"
+                 :page-sizes="[10, 20, 50, 100]" :page-size="pageSize" :total="totalCount" :layout="layout">
+  </el-pagination>
+</template>
+
+<script>
+  /*
+  分页组件
+
+  使用例子：  <jb-pagination @getList="getOrderList" :totalCount="totalCount"></jb-pagination>
+
+              getOrderList(index, size) {
+                  if (index) this.formData.pageIndexTem = index;
+                  if (size) this.formData.pageSizeTem = size;
+                  this.$api.vkcPost("aaa",this.formData,res => {
+                      this.totalCount = res.totalCount;
+                      this.tableData = res.data;
+                  },"getAllData");
+              },
+  */
+
+  export default {
+    name: "jb-pagination",
+    props: {
+      layout: {
+        type: String,
+        default: "total, sizes, prev, pager, next, jumper"
+      },
+      totalCount: {
+        type: Number,
+        default: 0
+      }
+    },
+    data() {
+      return {
+        pageIndex: 1,
+        pageSize: 10
+      };
+    },
+    methods: {
+      handleSizeChange(val) {
+        this.pageSize = val;
+        this.pageIndex = 1;
+        this.$emit("getList", this.pageIndex, this.pageSize);
+      },
+      handleCurrentChange(val) {
+        this.pageIndex = val;
+        this.$emit("getList", this.pageIndex, this.pageSize);
+      }
+    }
+  };
+</script>

@@ -1,0 +1,59 @@
+<template>
+    <div>
+        <el-table :data="amountDetail.formData" border style="width: 100%" v-show="amountDetail.formData.length!==0">
+            <el-table-column prop="metaDesc" label="控件名称" align="center"></el-table-column>
+            <el-table-column prop="controlType" label="控件类型" align="center">
+                <template slot-scope="scope">
+                    <span v-if="scope.row.controlType==='select'">下拉框</span>
+                    <span v-if="scope.row.controlType==='radio'">单选框</span>
+                    <span v-if="scope.row.controlType==='input'">输入框</span>
+                    <span v-if="scope.row.controlType==='city'">城市选择</span>
+                </template>
+            </el-table-column>
+            <el-table-column prop="onlineState" label="当前状态" align="center">
+                <template slot-scope="scope">
+                    <span v-if="scope.row.onlineState==='0'">使用中</span>
+                    <span v-else style="color:red">已禁用</span>
+                </template>
+            </el-table-column>
+            <el-table-column prop="controlParamValue" label="选项" align="center">
+                <template slot-scope="scope">
+                    <div v-if="!scope.row.controlParamValue">————</div>
+                    <div v-else>
+                        <p v-for="(item,key) in scope.row.controlParamValue" :key="key" v-if="scope.row.controlType==='select'&&key>0 || scope.row.controlType!=='select'" class="commonrow">{{item}}</p>
+                    </div>
+                </template>
+            </el-table-column>
+            <el-table-column prop="controlParamAmount" label="价格（元）" align="center">
+                <template slot-scope="scope">
+                    <input type="number" min="0" @blur="checkAmount(scope.row.controlParamAmount[key],scope.$index,key)" v-model.number="scope.row.controlParamAmount[key]" v-for="(item,key) in scope.row.controlParamAmount" :key="key" v-if="scope.row.controlType==='select'&&key>0 || scope.row.controlType!=='select'" class="commonrow" />
+                </template>
+            </el-table-column>
+            <el-table-column prop="onlineState" label="操作" align="center">
+                <template slot-scope="scope">
+                    <el-button type="text" v-if="scope.row.onlineState==='1'" @click="scope.row.onlineState='0'">启用</el-button>
+                    <el-button type="text" v-else @click="scope.row.onlineState='1'">禁用</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+    </div>
+</template>
+
+<script>
+import { mapGetters, mapActions } from "vuex";
+export default {
+    data() {
+        return {};
+    },
+    computed: {
+        ...mapGetters(["amountDetail"])
+    },
+    methods: {
+        checkAmount(value, formDataIndex, key) {
+            value === "" || value < 0
+                ? this.amountDetail.formData[formDataIndex].controlParamAmount.splice(key, 1, '0.00')
+                : this.amountDetail.formData[formDataIndex].controlParamAmount.splice(key, 1, this.$api.toDecimal(value,2));
+        }
+    }
+};
+</script>

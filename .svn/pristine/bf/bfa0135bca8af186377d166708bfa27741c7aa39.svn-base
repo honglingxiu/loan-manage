@@ -1,0 +1,44 @@
+<template>
+    <div class="wrapper">
+        <v-head></v-head>
+        <v-sidebar></v-sidebar>
+        <div class="content">
+            <div class="handle-sidebar" :class="showSidebar?'el-icon-caret-left':'el-icon-caret-right'" @click="toggleSidebar()"></div>
+            <div style="min-width: 1100px;">
+                <transition name="move" mode="out-in">
+                    <router-view></router-view>
+                </transition>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+import vHead from "./Header.vue";
+import vSidebar from "./Sidebar.vue";
+export default {
+    components: {
+        vHead,
+        vSidebar
+    },
+    data() {
+        return {
+            items: [],
+            showSidebar: true
+        };
+    },
+    methods: {
+        toggleSidebar() {
+            this.showSidebar ? $(".content").css("left", 0) : $(".content").css("left", 220);
+            this.showSidebar = !this.showSidebar;
+        }
+    },
+    watch: {
+        $route(to, from) {
+            if (!localStorage.getItem("loanuser")) {
+                this.$router.push("/login");
+            }
+        }
+    }
+};
+</script>

@@ -1,0 +1,134 @@
+<template>
+  <div>
+    <el-form :inline="true" :model="formData" size="small" class="demo-form-inline">
+      <el-form-item label="用户号码：">
+        <el-input v-model="formData.phone" placeholder="请输入用户号码" class="width200"></el-input>
+      </el-form-item>
+      <el-form-item label="用户姓名：">
+        <el-input v-model="formData.name" placeholder="请输入用户姓名" class="width200"></el-input>
+      </el-form-item>
+      <el-form-item label="注册平台：">
+        <el-select v-model="formData.platformType" placeholder="请选择注册平台" class="width200" @change="getChannelList">
+          <el-option label="全部" value=""></el-option>
+          <el-option label="安卓" value="Android app"></el-option>
+          <el-option label="iOS" value="IOS app"></el-option>
+          <el-option label="H5" value="H5"></el-option>
+          <el-option label="H5活动推广" value="H5活动推广"></el-option>
+          <el-option label="自主创建" value="自主创建"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="注册渠道：">
+        <el-select v-model="formData.promotionChannel" filterable placeholder="请选择注册渠道" class="width200">
+          <el-option v-for="item in channelList" :key="item.id" :label="item.promotionChannel"
+                     :value="item.id"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="提交状态：">
+        <el-select v-model="formData.submitState" placeholder="请选择提交状态" class="width200">
+          <el-option label="全部" value=""></el-option>
+          <el-option label="提交成功" value="1"></el-option>
+          <el-option label="提交失败" value="2"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="search()">查询</el-button>
+      </el-form-item>
+    </el-form>
+    <div style="margin-bottom:20px">
+      <el-table :data="tableData" stripe tooltip-effect='light' border>
+        <el-table-column label="序号" align='center' type="index" :index="indexMethod" width="55"></el-table-column>
+        <el-table-column prop="phone" label="用户号码" align='center'></el-table-column>
+        <el-table-column prop="name" label="用户姓名" align='center'></el-table-column>
+        <el-table-column prop="platformType" label="注册平台" align='center'></el-table-column>
+        <el-table-column prop="promotionChannel" label="注册渠道" align='center'></el-table-column>
+        <el-table-column prop="customerName" label="提交客户" align='center'></el-table-column>
+        <el-table-column prop="submitType" label="提交类型" align='center' v-if="submitWay==='API'">
+          <!-- API -->
+          <template slot-scope="scope">
+            <span v-if="scope.row.submitType==='2'">赠险</span>
+            <span v-else>贷款</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="productName" label="提交产品" align='center' v-if="submitWay==='API'"></el-table-column>
+        <!-- API -->
+        <el-table-column prop="submitState" label="提交状态" align='center'>
+          <template slot-scope="scope">
+            <span v-if="scope.row.submitState === '1'">提交成功</span>
+            <span v-else-if="scope.row.submitState === '2'">提交失败</span>
+            <span v-else>未提交</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="remark" label="备注" align='center' v-if="submitWay==='API'"></el-table-column>
+        <!-- API -->
+      </el-table>
+    </div>
+    <div style="float: right">
+      <el-pagination @current-change="handleCurrentChange" @size-change="handleSizeChange"
+                     :current-page="formData.pageIndex" :page-sizes="[10, 20, 50, 100]" :page-size="formData.pageSize"
+                     layout="total, sizes, prev, pager, next, jumper" :total="totalCount"></el-pagination>
+    </div>
+  </div>
+</template>
+
+<script>
+  export default {
+    data() {
+      return {
+        submitWay: "线下",
+        totalCount: 0,
+        tableData: [],
+        channelList: [],
+        formData: {
+          taskId: "",
+          phone: "",
+          name: "",
+          platformType: "",
+          promotionChannel: "",
+          submitState: "",
+          pageIndex: 1,
+          pageSize: 10
+        }
+      };
+    },
+    methods: {
+      search() {
+        this.formData.pageIndex = 1;
+        this.getTaskDetail();
+      },
+      handleSizeChange(val) {
+        this.formData.pageSize = val;
+        this.formData.pageIndex = 1;
+        this.getTaskDetail();
+      },
+      handleCurrentChange(val) {
+        this.formData.pageIndex = val;
+        this.getTaskDetail();
+      },
+      getChannelList() {
+        this.$api.vkcPost("supermarketloan/mgr/loanapply/getpromotionchannelitem", {param: {platformType: this.formData.platformType}}, res => {
+          this.formData.promotionChannel = "";
+          this.channelList = res;
+        });
+      },
+      getTaskDetail() {
+        this.$api.vkcPost2(
+          "supermarketloan/crm/submitRecord/pageCustomerOrder",
+          this.formData,
+          res => {
+            this.totalCount = res.totalCount;
+            this.tableData = res.data;
+          },
+          "getAllData"
+        );
+      },
+      indexMethod(index) {
+        let pIndex = this.formData.pageIndex;
+        let pRowCounte = this.formData.pageSize;
+        return (pIndex - 1) * pRowCounte + index + 1;
+      }
+    },
+    created() {
+      this.getChannelList();
+    }
+  };
+</script>

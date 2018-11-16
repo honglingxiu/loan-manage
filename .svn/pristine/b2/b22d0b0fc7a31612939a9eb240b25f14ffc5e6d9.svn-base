@@ -1,0 +1,216 @@
+<template>
+    <div>
+        <div class="detail-wrap">
+            <el-row>
+                <el-col :span="16">
+                    <div class="detail-top-phone detail-top common-left pd15">
+                        <user-phone :userPhone="userPhone"></user-phone>
+                    </div>
+                </el-col>
+                <el-col :span="8">
+                    <div class="detail-top-clue detail-top common-font pd-t5 pd-l20 ">
+                        <clue-status :clueStatus="clueStatus"></clue-status>
+                    </div>
+                </el-col>
+            </el-row>
+            <el-row class="mg-t15">
+                <el-col :span="16">
+                    <div class="common-left detail-bottom common-font">
+                        <user-info :userInfo="userInfo"></user-info>
+                    </div>
+                </el-col>
+                <el-col :span="8">
+                    <div class="detail-bottom">
+                        <v-communicate :communicateInfo='communicateInfo' @changePageIndex="changePageIndex"></v-communicate>
+                    </div>
+                </el-col>
+            </el-row>
+        </div>
+
+        <div class="footer">
+            <div class="flex align-middle justify-end footer-wrap">
+                <!--<el-button type="primary" v-show="takeClueStatus" :loading="takeClueStatusLoading" class="handleBtn" @click="takeClue">认领线索</el-button>-->
+                <el-button type="primary" class="handleBtn" @click="checkNext">查看下一个</el-button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+    import userInfo from "../common/userInfo";
+    import communicate from "../common/communicate";
+    import clueStatus from "../common/clueStatus";
+    import userPhone from "../common/userPhone";
+
+    export default {
+        components: {
+            "v-communicate": communicate,
+            userInfo,
+            clueStatus,
+            userPhone
+        },
+        props: {
+            selectRow: Object
+        },
+        data() {
+            return {
+                remarkDisable: false,//写备注按扭状态
+                disabled: false,//拨打按钮状态
+                callTimes:0,//拨打次数
+                metaDataInfo:[],//表单
+                phone:"",
+                phoneHidden:"",
+                claimState:"",
+                amount:"",
+                deadline:"",
+                applyTime:"",
+                takeClueStatus:false,//认领按钮可视状态
+                takeClueStatusLoading:false,//认领加载状态
+                orderId:this.selectRow.id,
+                communicateData:[],//获取的备注数据
+                communicateParam:{
+                    pageTotal: 0,
+                    totalCount: 0,
+                    pageSize: 5,
+                    pageIndex: 1
+                }
+            };
+        },
+        computed:{
+            //封装对应数据传到子组件
+            userPhone(){
+                return {
+                    disabled:this.disabled,
+                    callTimes:this.callTimes,
+                    phone:this.phone,
+                    phoneHidden:this.phoneHidden
+                }
+            },
+            userInfo(){
+                return this.metaDataInfo;
+            },
+            clueStatus(){
+                return {
+                    claimState:this.claimState,
+                    amount:this.amount,
+                    deadline:this.deadline,
+                    applyTime:this.applyTime
+                }
+            },
+            communicateInfo(){
+                return {
+                    id:this.orderId,
+                    remarkDisable:this.remarkDisable,
+                    data:this.communicateData,
+                    communicateParam:this.communicateParam
+                };
+            },
+            param(){//获取记录请求参数
+                return {
+                    relationId: this.orderId,
+                    pageIndex: this.communicateParam.pageIndex,
+                    pageSize: this.communicateParam.pageSize
+                }
+            }
+        },
+        methods: {
+            getClueDetail(){
+                this.$api.vkcPost2(
+                    "supermarketloan/crm/clue/orderDetail",
+                    {
+                        id:this.orderId
+                    },
+                    res => {
+                        this.metaDataInfo=res.metaDataInfo;
+                        this.phone=res.phone;
+                        this.phoneHidden=res.phoneHidden;
+                        this.claimState=res.claimState;
+                        this.amount=res.amount;
+                        this.deadline=res.deadline;
+                        this.applyTime=res.applyTime;
+                        this.callTimes=res.callTimes;
+                    }
+                );
+            },
+            getCommunicateRecord() {
+                this.$api.vkcPost2(
+                    "supermarketloan/crm/remark/queryRecord",
+                    this.param,
+                    res => {
+                        this.communicateParam.pageTotal = res.pageTotal;
+                        this.communicateParam.totalCount = res.totalCount;
+                        this.communicateData = res.data;
+                    },
+                    "getAllData"
+                );
+            },
+            checkNext(){
+            //查看下一个
+                this.$api.vkcPost2(
+                    "supermarketloan/crm/clue/next",
+                    {
+                        id:this.orderId,
+                        claimState:"1"
+                    },
+                    res => {
+                        this.orderId=res.id;
+                        this.getClueDetail();
+                        this.getCommunicateRecord();
+                    }
+                );
+            },
+            changePageIndex(index){
+                //备注记录页数变化
+                this.communicateParam.pageIndex=index;
+                this.getCommunicateRecord();
+            }
+        },
+        created() {
+            this.getClueDetail();
+            this.getCommunicateRecord();
+        }
+    };
+</script>
+<style scoped>
+    >>>.common-font {
+        font-size: 15px;
+        color: #666666;
+    }
+
+    .detail-top {
+        height: 150px;
+        border: 1px solid #cccccc;
+    }
+
+    .common-left {
+        margin-right: 20px;
+    }
+    .detail-bottom{
+        height: 500px;
+        margin-bottom: 70px;
+    }
+    .footer {
+        position: fixed;
+        bottom: 0px;
+        left: 249px;
+        right: 0;
+        background: #666;
+        height: 90px;
+        z-index: 99;
+    }
+
+    .footer-wrap {
+        width: 80%;
+        height: 90px;
+        margin: 0 10%;
+    }
+
+
+    .handleBtn {
+        padding: 15px;
+        width: 200px;
+    }
+
+
+</style>
+

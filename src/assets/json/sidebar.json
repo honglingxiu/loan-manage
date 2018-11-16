@@ -1,0 +1,121 @@
+{
+    "0": {
+        "index": "/home",
+        "title": "统计报表",
+        "subs": [{
+                "index": "/home",
+                "title": "首页"
+            },
+            {
+                "index": "/homeFinancialLoan",
+                "title": "金融贷款"
+            },
+            {
+                "index": "/homeWeddingPhoto",
+                "title": "婚纱摄影"
+            }
+        ]
+    },
+    "20": {
+        "index": "/rights",
+        "title": "权限管理",
+        "subs": [{
+                "index": "/role",
+                "title": "角色管理"
+            },
+            {
+                "index": "/account",
+                "title": "账号管理"
+            },
+            {
+                "index": "/customerAccount",
+                "title": "客户账号"
+            }
+        ]
+    },
+    "1": { "index": "/ad", "title": "广告管理" },
+    "2": { "index": "/recommend", "title": "推荐管理" },
+    "3": { "index": "/product", "title": "产品管理" },
+    "4": {
+        "index": "/applyRecord",
+        "title": "申请记录",
+        "subs": [{
+                "index": "/financialLoan",
+                "title": "金融贷款"
+            },
+            {
+                "index": "/weddingPhoto",
+                "title": "婚纱摄影"
+            }
+        ]
+    },
+    "5": {
+        "index": "/submitRecord",
+        "title": "提交记录",
+        "subs": [{
+                "index": "/submitCustomer",
+                "title": "提交客户"
+            },
+            {
+                "index": "/submitCustomerService",
+                "title": "提交客服"
+            }
+        ]
+    },
+    "6": { "index": "/message", "title": "消息管理" },
+    "7": { "index": "/suggest", "title": "建议管理" },
+    "8": {
+        "index": "/activity",
+        "title": "活动管理",
+        "subs": [{
+                "index": "/activityList",
+                "title": "活动列表"
+            },
+            {
+                "index": "/activityForm",
+                "title": "表单控件"
+            },
+            {
+                "index": "/activityRecord",
+                "title": "申请记录"
+            }
+        ]
+    },
+    "9": { "index": "/user", "title": "用户管理" },
+    "10": { "index": "/order", "title": "订单管理" },
+    "12": { "index": "/customer", "title": "客户管理" },
+    "11": {
+        "index": "/sms",
+        "title": "短信管理",
+        "subs": [{
+                "index": "/smsList",
+                "title": "短信列表"
+            },
+            {
+                "index": "/smsTemplate",
+                "title": "短信模板"
+            }
+        ]
+    },
+    "13": { "index": "/workList", "title": "工单管理" },
+    "21": { "index": "/business", "title": "业务管理" },
+    "16": { "index": "/rules", "title": "规则管理" },
+    "17": { "index": "/soundRecord", "title": "录音质检" },
+    "19": {
+        "index": "/cluemgr",
+        "title": "线索管理",
+        "subs": [{
+                "index": "/clue",
+                "title": "线索公海"
+            },
+            {
+                "index": "/myClue",
+                "title": "我的线索"
+            }
+        ]
+    },
+    "14": { "index": "/customerServiceManagement", "title": "客服管理" },
+    "15": { "index": "/smsRecord", "title": "短信记录" },
+    "18": { "index": "/workHandle", "title": "工单处理" },
+    "default": ""
+}

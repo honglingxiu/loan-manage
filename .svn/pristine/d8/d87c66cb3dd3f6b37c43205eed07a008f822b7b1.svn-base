@@ -1,0 +1,216 @@
+<template>
+  <div>
+    <fieldset class="fieldset">
+      <legend class="legend">用户信息</legend>
+      <div class="col-6 mg-t5 mg-b10">手机号：{{info.userInfo.Phone}}</div>
+      <div class="col-6 mg-t5 mg-b10">姓名：{{info.userInfo.Name}}</div>
+      <div class="col-6 mg-t5 mg-b10">微信号：{{info.userInfo.WeChat}}</div>
+      <div class="col-6 mg-t5 mg-b10">身份证：{{info.userInfo.IdCard}}</div>
+      <div class="col-6 mg-t5 mg-b10">城市省份：{{info.userInfo.CityProvince}}</div>
+      <div class="col-6 mg-t5 mg-b10">城市市区：{{info.userInfo.CityDowntown}}</div>
+      <div class="col-6 mg-t5 mg-b10">出生年月日：{{info.userInfo.BirthDate}}</div>
+      <div class="col-6 mg-t5 mg-b10">申请来源：{{info.userInfo.Applysources}}</div>
+      <div class="col-6 mg-t5 mg-b10">性别：{{info.userInfo.Sex}}</div>
+      <div class="col-6 mg-t5 mg-b10">邮箱：{{info.userInfo.Mail}}</div>
+      <div class="col-6 mg-t5 mg-b10">年龄：{{info.userInfo.Age}}</div>
+      <div class="col-6 mg-t5 mg-b10">客户实际申请IP：{{info.userInfo.ip}}</div>
+      <div class="col-6 mg-t5 mg-b10">工作所在地：{{info.userInfo.LocationWork}}</div>
+      <div class="col-6 mg-t5 mg-b10">工作：{{info.userInfo.Job}}</div>
+      <div class="col-6 mg-t5 mg-b10">企业类型：{{info.userInfo.EnterpriseType}}</div>
+      <div class="col-6 mg-t5 mg-b10">单位工龄：{{info.userInfo.CompanySeniority}}</div>
+      <div class="col-6 mg-t5 mg-b10">教育程度：{{info.userInfo.EducationLevel}}</div>
+    </fieldset>
+    <el-tabs type="border-card" @tab-click="changeOrderList" v-model="activeName">
+      <el-tab-pane label="金融征信" name="financialLoan" style="padding:20px 80px">
+        <div class="col-6 mg-t5 mg-b10">申请金额：{{info.creditInfo.ApplyAmount}}</div>
+        <div class="col-6 mg-t5 mg-b10">名下是否有车：{{info.creditInfo.AutomobileAssets}}</div>
+        <div class="col-6 mg-t5 mg-b10">名下房产类型：{{info.creditInfo.HouseProperty}}</div>
+        <div class="col-6 mg-t5 mg-b10">工资形式：{{info.creditInfo.WageForm}}</div>
+        <div class="col-6 mg-t5 mg-b10">月收入（元）：{{info.creditInfo.MonthlySalary}}</div>
+        <div class="col-6 mg-t5 mg-b10">职业身份：{{info.creditInfo.Profession}}</div>
+        <div class="col-6 mg-t5 mg-b10">是否有本地社保：{{info.creditInfo.SocialSecurity}}</div>
+        <div class="col-6 mg-t5 mg-b10">是否有寿险保单：{{info.creditInfo.LifeInsurance}}</div>
+        <div class="col-6 mg-t5 mg-b10">是否有信用卡：{{info.creditInfo.CreditCard}}</div>
+        <div class="col-6 mg-t5 mg-b10">是否有本地公积金：{{info.creditInfo.AccFund}}</div>
+        <div class="col-6 mg-t5 mg-b10">征信记录：{{info.creditInfo.CreditRecord}}</div>
+        <div class="col-6 mg-t5 mg-b10">信用情况：{{info.creditInfo.CreditStatus}}</div>
+        <div class="col-6 mg-t5 mg-b10">贷款用途：{{info.creditInfo.Purpose}}</div>
+        <div class="col-6 mg-t5 mg-b10">贷款类型：{{info.creditInfo.LoanType}}</div>
+        <div class="col-6 mg-t5 mg-b10">贷款记录：{{info.creditInfo.LoanRecord}}</div>
+        <div class="col-6 mg-t5 mg-b10">银行代发（是/否）：{{info.creditInfo.BankTransfer}}</div>
+        <div class="col-6 mg-t5 mg-b10">贷款期限：{{info.creditInfo.ApplyDeadline}}</div>
+        <div class="col-6 mg-t5 mg-b10">名下是否有房：{{info.creditInfo.HavaHouseProperty}}</div>
+        <div class="col-6 mg-t5 mg-b10">抵押情况（房产）：{{info.creditInfo.HouseMortgageStatus}}</div>
+        <div class="col-6 mg-t5 mg-b10">房龄：{{info.creditInfo.HouseAge}}</div>
+        <div class="col-6 mg-t5 mg-b10">估值（房产）：{{info.creditInfo.HouseValuation}}</div>
+        <div class="col-6 mg-t5 mg-b10">抵押情况（车产）：{{info.creditInfo.CarMortgageStatus}}</div>
+        <div class="col-6 mg-t5 mg-b10">估值（车产）：{{info.creditInfo.CarValuation}}</div>
+      </el-tab-pane>
+      <el-tab-pane label="婚纱摄影" name="weddingPhoto" style="padding:20px 80px">
+        <div class="col-6 mg-t5 mg-b10">计划时间：{{info.wedressInfo.PlanTime}}</div>
+        <div class="col-6 mg-t5 mg-b10">拍摄地点：{{info.wedressInfo.FilmingLocation}}</div>
+        <div class="col-6 mg-t5 mg-b10">拍摄城市：{{info.wedressInfo.FilmingCity}}</div>
+        <div class="col-6 mg-t5 mg-b10">价格预算：{{info.wedressInfo.BudgetPrice}}</div>
+      </el-tab-pane>
+    </el-tabs>
+    <fieldset class="fieldset">
+      <legend class="legend">申请订单记录</legend>
+      <div v-if="activeName=='financialLoan'">
+        <el-table :data="creditApplyRecord" stripe border>
+          <!--<el-table-column type="index" width="50" :index="$api.IndexMethod(recordPageIndex,recordPageSize)"
+                           label="序号"></el-table-column>-->
+          <el-table-column prop="productName" label="产品名称"></el-table-column>
+          <el-table-column prop="productType" label="接入类型"></el-table-column>
+          <el-table-column prop="phone" label="申请号码"></el-table-column>
+          <el-table-column prop="amount" label="申请金额"></el-table-column>
+          <el-table-column prop="deadline" label="申请期限"></el-table-column>
+          <el-table-column prop="applyTime" label="申请时间"></el-table-column>
+          <el-table-column prop="platformType" label="平台类型"></el-table-column>
+          <el-table-column prop="promotionChannel" label="推广渠道"></el-table-column>
+        </el-table>
+        <!--<div class="pull-right" v-if="applyRecordList.length>0">
+          <jb-pagination @getList="getUserApplyRecord" :totalCount="totalCount"></jb-pagination>
+        </div>-->
+      </div>
+      <div v-if="activeName=='weddingPhoto'">
+        <el-table :data="wedressApplyRecord" stripe border>
+          <!--<el-table-column type="index" width="50" :index="$api.IndexMethod(recordPageIndex,recordPageSize)"
+                           label="序号"></el-table-column>-->
+          <el-table-column prop="phone" label="申请号码"></el-table-column>
+          <el-table-column prop="weChat" label="微信号"></el-table-column>
+          <el-table-column prop="name" label="姓名"></el-table-column>
+          <el-table-column prop="sex" label="性别"></el-table-column>
+          <el-table-column prop="planTime" label="计划时间"></el-table-column>
+          <el-table-column prop="filmingLocation" label="拍摄地点"></el-table-column>
+          <el-table-column prop="filmingCity" label="拍摄城市"></el-table-column>
+          <el-table-column prop="budgetPrice" label="价格预算"></el-table-column>
+          <el-table-column prop="applyDate" label="申请时间"></el-table-column>
+          <el-table-column prop="platformType" label="平台类型"></el-table-column>
+          <el-table-column prop="promotionChannel" label="推广渠道"></el-table-column>
+          <el-table-column prop="promotionChannelChild" label="二级渠道"></el-table-column>
+          <el-table-column prop="disbutionState" label="分配状态">
+            <template slot-scope="scope">
+              <span v-if="scope.row.disbutionState=='0'">已提交</span>
+              <span v-else>未提交</span>
+            </template>
+          </el-table-column>
+        </el-table>
+        <!--<div class="pull-right" v-if="applyRecordList.length>0">
+          <jb-pagination @getList="getUserApplyRecord" :totalCount="totalCount"></jb-pagination>
+        </div>-->
+      </div>
+    </fieldset>
+  </div>
+</template>
+
+<script>
+  export default {
+    props: ["user"],
+    watch: {
+      user: function (user) {
+        //this.getUserInfo(user.id);
+        //this.getUserApplyRecord(user.phone);
+        this.getRelatedInfo(user.id);
+      }
+    },
+    data() {
+      return {
+        activeName: "financialLoan",//默认选中的标签是金融征信
+        metaDataInfo:{},//动态表单信息
+        creditApplyRecord:[],//金融征信列表
+        wedressApplyRecord:[]//婚纱摄影列表
+      };
+    },
+    computed:{
+      info(){
+        var userInfo={};
+        var creditInfo={};
+        var wedressInfo={};
+        if(this.metaDataInfo.length>0){
+          this.metaDataInfo.forEach((item)=>{
+            if(item.metaType=="user"){
+              userInfo[item.metaName]=item.value;
+            }else if(item.metaType=="credit"){
+              creditInfo[item.metaName]=item.value;
+            }else if(item.metaType=="wedress"){
+              wedressInfo[item.metaName]=item.value;
+            }else {
+             // console.log(item);
+            }
+          });
+        }
+        return {
+          userInfo:userInfo,
+          creditInfo:creditInfo,
+          wedressInfo:wedressInfo
+        }
+      }
+    },
+    methods: {
+      /*judgeDataIsNull(data) {
+        //判断数据是否为空，空字符串或空对象都返回true，否则返回false，即数据不为空
+        if (data == undefined || data == null || data == "" || JSON.stringify(data) == "{}") {
+          return true;
+        } else {
+          return false;
+        }
+      },
+      getUserInfo(userId) {
+        if (userId == null || userId == "") {
+          return;
+        }
+        this.$api.vkcPost("supermarketloan/mgr/userManagement/getUserInfo", {userId: userId}, res => {
+          // console.log(res);
+          this.detailData = res;
+        });
+      },
+      getUserApplyRecord(pageIndex, pageSize, userPhone) {
+        if (pageIndex) this.recordPageIndex = pageIndex;
+        if (pageSize) this.recordPageSize = pageSize;
+        if (userPhone == null || userPhone == "") {
+          return;
+        }
+        let _this = this;
+        let param = {
+          param: {
+            phone: userPhone,
+            pageIndex: _this.recordPageIndex,
+            pageSize: _this.recordPageSize
+          }
+        };
+        _this.$api.vkcPost(
+          "supermarketloan/mgr/userManagement/getApplyOrder",
+          param,
+          res => {
+            if (!_this.judgeDataIsNull(res)) {
+              if (res.code == "0" || res.code == 0) {
+                _this.totalCount = res.totalCount;
+                _this.applyRecordList = res.data;
+              } else {
+                this.$message.error(res.msg);
+              }
+            }
+          },
+          "all"
+        );
+      },*/
+      getRelatedInfo(userId) {
+        this.$api.vkcPost(
+          "supermarketloan/mgr/userManagement/getUserInfo",
+          {
+            userId: userId
+          },
+          res => {
+            this.metaDataInfo=res.metaDataInfo;
+            this.creditApplyRecord=res.creditApplyRecord;
+            this.wedressApplyRecord=res.wedressApplyRecord;
+           // console.log(this.info);
+          }
+        );
+      },
+      changeOrderList(tab) {//选项卡改变，申请订单记录相应改变
+        this.activeName = tab.name;
+      }
+    }
+  };
+</script>

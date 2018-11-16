@@ -1,0 +1,115 @@
+<template>
+    <el-tabs type="border-card">
+        <el-tab-pane label="质检评分">
+            <div class="clearfix">
+                <el-table :data="tableData" :span-method="objectSpanMethod" border>
+                    <el-table-column prop="ruleName" label="规则名称"></el-table-column>
+                    <el-table-column prop="score" label="总分值"></el-table-column>
+                    <el-table-column prop="itemContent" label="项次内容"></el-table-column>
+                    <el-table-column prop="itemScore" label="项次分值"></el-table-column>
+                    <el-table-column prop="description" label="内容说明"></el-table-column>
+                    <el-table-column label="打分">
+                        <template slot-scope="scope">
+                            <el-input v-model="scope.row.qualityScore" min="0" placeholder="分值" @blur="()=>scope.row.qualityScore = checkScore(scope.row)"></el-input>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <div class="pull-right mg-t10 mg-r20">总评分：
+                    <span class="cff9900">{{totalScore}}</span>
+                </div>
+            </div>
+        </el-tab-pane>
+        <el-tab-pane label="用户资料">
+            <fieldset class="fieldset">
+                <legend class="legend">用户信息</legend>
+                <div class="col-6 mg-t5 mg-b10" v-for="(item,key) in userInfo.basicInfo" :key="key">{{key}}{{item}}</div>
+            </fieldset>
+
+            <fieldset class="fieldset">
+                <legend class="legend">征信信息</legend>
+                <div class="col-6 mg-t5 mg-b10" v-for="(item,key) in userInfo.creditInfo" :key="key">{{key}}{{item}}</div>
+            </fieldset>
+        </el-tab-pane>
+    </el-tabs>
+</template>
+<script>
+import { mapGetters, mapActions } from "vuex";
+export default {
+    data() {
+        return {
+            ruleId: "",
+            firstIndex: 0,
+            sameNum: 0
+        };
+    },
+    watch: {
+        tableData(n) {
+            if(n.length===1) {
+                n[0].flag = true;
+                n[0].sameNum = 1;
+                return;
+            }
+            n.forEach((item, index, value) => {
+                if (index !== 0) {
+                    if (item.ruleId === this.ruleId) {
+                        this.sameNum++;
+                    } else {
+                        value[this.firstIndex].flag = true;
+                        value[this.firstIndex].sameNum = this.sameNum;
+                        this.ruleId = item.ruleId;
+                        this.firstIndex = index;
+                        this.sameNum = 1;
+                    }
+                    if (index === value.length - 1) {
+                        value[this.firstIndex].flag = true;
+                        value[this.firstIndex].sameNum = this.sameNum;
+                    }
+                } else {
+                    this.ruleId = item.ruleId;
+                    this.firstIndex = 0;
+                    this.sameNum = 1;
+                }
+            });
+        }
+    },
+    computed: {
+        ...mapGetters(["soundDetail"]),
+        userInfo() {
+            if (this.soundDetail.userInfo) return this.soundDetail.userInfo;
+            return {
+                basicInfo: {},
+                creditInfo: {}
+            };
+        },
+        tableData() {
+            if (this.soundDetail.crmQualityControlDetail) return this.soundDetail.crmQualityControlDetail.items;
+            return [];
+        },
+        totalScore() {
+            let total = 0;
+            if (!this.tableData) return "0";
+            for (const item of this.tableData) {
+                var f = parseFloat(item.qualityScore);
+                if (isNaN(f)) f = 0;
+                total += f;
+            }
+            return total.toFixed(4);
+        }
+    },
+    methods: {
+        checkScore(row) {
+            if (row.qualityScore === "" || row.qualityScore === "0") return row.qualityScore;
+            if (row.qualityScore > row.itemScore) {
+                return row.itemScore;
+            }
+            return this.$api.toDecimal(row.qualityScore, 4);
+        },
+        objectSpanMethod({ row, column, rowIndex, columnIndex }) {
+            if (columnIndex === 0 || columnIndex === 1) {
+                if (row.flag) return [row.sameNum, 1];
+                return [0, 0];
+            }
+        }
+    }
+};
+</script>

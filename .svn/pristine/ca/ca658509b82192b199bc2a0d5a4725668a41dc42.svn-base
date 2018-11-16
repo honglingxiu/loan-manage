@@ -1,0 +1,46 @@
+import api from "../../assets/api.js";
+import * as types from '../types'
+
+const state = {
+    workListRow: "",
+    workListFormData: "",
+    workListDetail: {
+        metaDataInfo: []
+    }
+};
+
+const getters = {
+    workListRow: state => state.workListRow,
+    workListFormData: state => state.workListFormData,
+    workListDetail: state => state.workListDetail
+};
+
+const mutations = {
+    [types.GET_WORKLIST_ROW](state, payload) {
+        state.workListRow = payload;
+    },
+    [types.GET_WORKLIST_FORM_DATA](state, payload) {
+        state.workListFormData = payload;
+    },
+    [types.GET_WORKLIST_DETAIL](state, payload) {
+        state.workListDetail = payload;
+    }
+};
+
+const actions = {
+    getWorkListDetail({ commit }) {
+        return new Promise((resolve) => {
+            api.vkcPost2("supermarketloan/crm/customerservice/manage/orderDetail", { orderId: state.workListRow.orderId || state.workListRow.id }, res => {
+                commit(types.GET_WORKLIST_DETAIL, res);
+                resolve(true);
+            });
+        });
+    }
+};
+
+export default {
+    state,
+    getters,
+    mutations,
+    actions
+}

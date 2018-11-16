@@ -1,0 +1,484 @@
+import Vue from "vue";
+import router from "../router";
+import store from "../store";
+import {MessageBox} from "element-ui";
+import {Base64} from "js-base64";
+
+export default {
+  install(Vue, options) {
+    if (Vue) {
+      Vue.prototype.$api = this;
+    }
+  },
+  env() {
+    if (process.env.NODE_ENV === "development") return "development";
+    if (window.location.href.includes('192.168')) return 'test';
+    return 'production'
+  },
+  pxbBaseUrl() {
+    return "http://admin.pinxiaobao.cn/";
+  },
+  baseUrl() {
+    if (this.env() === "development" || this.env() === 'test') {
+      return "http://192.168.218.247:8022/";
+    }
+    return "/";
+  },
+  baseUrl2() {
+    if (this.env() === "development" || this.env() === 'test') {
+      return "http://192.168.218.247:8055/";
+    }
+    return "/";
+  },
+  ServiceProxy() {
+    if (this.env() === "development" || this.env() === 'test') {
+      return "http://192.168.218.227:8081/ServiceProxy.aspx";
+    }
+    return "http://transfer.liulianglf.com/ServiceProxy.aspx";
+  },
+  _vkcServer: null,
+  getVkcServer() {
+    if (!this._vkcServer) {
+      var servicePara = {
+        key: "jbfly",
+        containKey: true,
+        defExt: "",
+        url: this.ServiceProxy()
+      };
+      if (window["jc"]) {
+        this._vkcServer = window["jc"].createService(servicePara);
+        //console.log("init jc server", this._vkcServer);
+      }
+    }
+    return this._vkcServer;
+  },
+  vkcPost(url, data, callback, getAllData) {
+    this.getVkcServer()
+      .ajax(this.baseUrl() + url, data)
+      .done(res => this.vkcBack(res, callback, getAllData));
+  },
+  vkcPost2(url, data, callback, getAllData) {
+    typeof data !== "object" ? (data = {}) : "";
+    let userInfo = this.getLStorage("loanuser", "decode");
+    userInfo ? (data.sessionId = userInfo.sessionId) : "";
+    this.getVkcServer()
+      .ajax(this.baseUrl2() + url, data)
+      .done(res => this.vkcBack(res, callback, getAllData));
+  },
+  vkcBack(res, callback, getAllData) {
+    //console.log(res);
+    if (res.Code == 100) {
+      switch (res.Result.code) {
+        case "0": // 0   成功
+          if (!getAllData) return callback(res.Result.data);
+          return callback(res.Result);
+        case "101": // 101 未登录或会话过期
+          this.hideLoading();
+          MessageBox.alert(res.Result.msg, {
+            showClose: false,
+            callback: action => {
+              this.setSStorage('sessionCode', '101');
+              MessageBox.close();
+              router.push("/login");
+            }
+          });
+          break;
+        default:
+          // 失败
+          this.hideLoading();
+          MessageBox.alert(res.Result.msg, {showClose: false});
+          break;
+      }
+    } else {
+      this.hideLoading();
+      MessageBox.alert(res.Msg, {showClose: false});
+    }
+  },
+  jqPost(url, data, callback) {
+    // if (url.indexOf("http://") === -1) {
+    if (!(url.includes("http://") || url.includes("https://"))) {
+      url = this.baseUrl() + url;
+    }
+    $.ajax({
+      type: "POST",
+      url: url,
+      async: true,
+      data: data,
+      success: callback,
+      error: (data, textStatus, jqXHR) => {
+        console.log(textStatus);
+      },
+      dataType: "json"
+    });
+  },
+  getUrlParam(name) {
+    var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+    var p = window.location.href.split("?")[1];
+    if (p) {
+      var r = p.match(reg);
+      if (r) {
+        return decodeURIComponent(r[2]);
+      }
+    }
+    return null;
+  },
+  getCookie(key) {
+    //根据key值获取对应的cookie
+    var data = document.cookie;
+    //获取key第一次出现的位置
+    var startIndex = data.indexOf(key + "=");
+    //如果开始索引值大于0表示有cookie
+    if (startIndex > -1) {
+      //key的起始位置等于出现的位置加key的长度+1
+      startIndex = startIndex + key.length + 1;
+      //结束位置等于从key开始的位置之后第一次;号所出现的位置
+      var endIndex = data.indexOf(";", startIndex);
+      //如果未找到结尾位置则结尾位置等于cookie长度，之后的内容全部获取
+      endIndex = endIndex < 0 ? data.length : endIndex;
+      var str = decodeURIComponent(data.substring(startIndex, endIndex));
+      return window.JSON.parse(str);
+    }
+    return "";
+  },
+  setCookie(key, value, time) {
+    //默认保存时间
+    var time = time;
+    //获取当前时间
+    var cur = new Date();
+    var undefined;
+    //设置指定时间
+    cur.setTime(cur.getTime() + time * 24 * 3600 * 1000);
+    //创建cookie  并且设置生存周期为GMT时间
+    document.cookie = key + "=" + encodeURIComponent(window.JSON.stringify(value)) + ";expires=" + (time === undefined ? "" : cur.toGMTString());
+  },
+  delCookie(key) {
+    //获取cookie
+    var data = this.getCookie(key);
+    //如果获取到cookie则重新设置cookie的生存周期为过去时间
+    if (data !== false) {
+      this.setCookie(key, data, -1);
+    }
+  },
+  /**
+   *
+   * @param key key
+   * @param value value
+   * @param encode 是否加密存储
+   */
+  setSStorage(key, value, encode) {
+    let str = window.JSON.stringify(value);
+    if (encode) {
+      str = this.Encrypt(str);
+    }
+    window.sessionStorage.setItem(key, str);
+  },
+  getSStorage(key, decode) {
+    var json = "";
+    json = window.sessionStorage.getItem(key);
+    if (!json) return "";
+    if (decode) {
+      json = this.Decrypt(json);
+    }
+    try {
+      return window.JSON.parse(json);
+    } catch (error) {
+      window.sessionStorage.removeItem(key);
+      window.location.reload();
+    }
+  },
+  setLStorage(key, value, encode) {
+    let str = window.JSON.stringify(value);
+    if (encode) {
+      str = this.Encrypt(str);
+    }
+    window.localStorage.setItem(key, str);
+  },
+  getLStorage(key, decode) {
+    var json = "";
+    json = window.localStorage.getItem(key);
+    if (!json) return "";
+    if (decode) {
+      json = this.Decrypt(json);
+    }
+    try {
+      return window.JSON.parse(json);
+    } catch (error) {
+      window.localStorage.removeItem(key);
+      window.location.reload();
+    }
+  },
+  checkMobile(nub) {
+    if (!/^1[0-9]{10}$/.test(nub)) {
+      MessageBox("手机号码输入有误，请检查", "提示");
+      return false;
+    }
+  },
+  isNumber(val) {
+    let pattern = /^[1-9]{1}\d*$/g;
+    let isNumber = pattern.test(val);
+    return isNumber;
+  },
+  /**
+   * 四舍五入强制保留n位小数
+   * @param  x  操作数字
+   * @param  n 保留位数
+   */
+  toDecimal(x, n) {
+    var f = parseFloat(x);
+    if (isNaN(f) && isNaN(n)) {
+      return false;
+    }
+    if (n === 0) return Math.round(x);
+    var num = Number("1E" + n);
+    var f = Math.round(x * num) / num;
+    var s = f.toString();
+    var rs = s.indexOf(".");
+    if (rs < 0) {
+      rs = s.length;
+      s += ".";
+    }
+    while (s.length <= rs + n) {
+      s += "0";
+    }
+    return s;
+  },
+  showLoading(text) {
+    let el = $("#jbLoading");
+    if (el.length > 0) {
+      el.find('.el-loading-text').text(text);
+      el.show();
+      return;
+    }
+    let _html = `<div class="el-loading-mask" id="jbLoading"><div class="el-loading-spinner"><svg viewBox="25 25 50 50" class="circular"><circle cx="50" cy="50" r="20" fill="none" class="path"></circle></svg><p class="el-loading-text">${text}</p></div></div>`;
+    $("body").append(_html);
+  },
+  hideLoading() {
+    let el = $("#jbLoading");
+    el.length > 0 ? el.hide() : "";
+  },
+  /**
+   * 字符串加密（简单加密，后续优化）
+   * @param  s  加密字符串
+   * @param  ps  加密密钥
+   * return  加密后字符串
+   */
+  Encrypt(s, ps) {
+    if (s === "") return "";
+    let p = ps;
+    if (!p || p === "") {
+      p = "junbo6868";
+    }
+    let bp = Base64.encode(p).replace(/=/g, '');
+    let rp = bp.slice(0, bp.length / 2);
+    let bs = Base64.encode(s);
+    let ml = bs.length / 2;
+    let es = bs.slice(0, ml) + rp + bs.slice(ml);
+    return es;
+  },
+  /**
+   * 字符串解密
+   * @param  s  解密字符串
+   * @param  ps  解密密钥
+   * return  解密后字符串
+   */
+  Decrypt(s, ps) {
+    if (s == "") return "";
+    let p = ps;
+    if (!p || p == "") {
+      p = "junbo6868";
+    }
+    let bp = Base64.encode(p).replace(/=/g, '');
+    let rp = bp.slice(0, bp.length / 2);
+    let rpl = rp.length;
+    let ml = (s.length - rpl) / 2;
+    let es = s.slice(0, ml) + s.slice(ml + rpl);
+    let ds = Base64.decode(es);
+    return ds;
+  },
+  /**
+   * 获取当前日期时间 默认格式 "yyyy-mm-dd hh:mm:ss"
+   * @param {String} formatType  可选 格式类型
+   */
+  getNowDate: function (formatType) {
+    let type = formatType || 'yyyy-mm-dd hh:mm:ss';
+    let currentdate = '';
+    let date = new Date();
+    let month = date.getMonth() + 1;
+    let strDate = date.getDate();
+    let minutes = date.getMinutes();
+    let seconds = date.getSeconds();
+    month >= 1 && month <= 9 ? month = "0" + month : '';
+    strDate >= 0 && strDate <= 9 ? strDate = "0" + strDate : '';
+    minutes >= 0 && minutes <= 9 ? minutes = "0" + minutes : '';
+    seconds >= 0 && seconds <= 9 ? seconds = "0" + seconds : '';
+
+    switch (type.toLowerCase()) {
+      case 'yyyy-mm-dd hh:mm:ss':
+        currentdate = date.getFullYear() + "-" + month + "-" + strDate + " " + date.getHours() + ":" + minutes + ":" + seconds;
+        break;
+      case 'yyyy-mm-dd':
+        currentdate = date.getFullYear() + "-" + month + "-" + strDate;
+        break;
+      case 'yyyy-mm-dd hh:mm':
+        currentdate = date.getFullYear() + "-" + month + "-" + strDate + " " + date.getHours() + ":" + minutes;
+        break;
+      case 'yyyy-mm-dd hh':
+        currentdate = date.getFullYear() + "-" + month + "-" + strDate + " " + date.getHours();
+        break;
+      case 'yyyy-mm':
+        currentdate = date.getFullYear() + "-" + month;
+        break;
+      case 'yyyy':
+        currentdate = date.getFullYear();
+        break;
+      default:
+        currentdate = date.getFullYear() + "-" + month + "-" + strDate + " " + date.getHours() + ":" + minutes + ":" + seconds;
+        break;
+    }
+    return currentdate;
+  },
+  /**
+   * 获取外呼配置信息
+   */
+  getSoundConfig() {
+    let soundConfig = store.getters.soundConfig;
+    return new Promise((resolve) => {
+      if (Object.keys(soundConfig).length > 0) {
+        resolve(soundConfig);
+        return;
+      }
+      this.vkcPost2("supermarketloan/crm/soundserver/getConfigInfo", "", res => {
+        store.commit('SOUND_CONFIG', res);
+        resolve(res);
+      });
+    });
+  },
+  /**
+   * 调用webServer接口
+   * @param url（webservice服务地址）
+   * @param requestXML xml 传的数据
+   */
+  webServerPost(url, requestXML) {
+    return new Promise((resolve, reject) => {
+      if (typeof requestXML !== "string" || requestXML === "") {
+        reject('参数错误！')
+      }
+      let xmlhttp = new XMLHttpRequest();
+      xmlhttp.open("POST", url, true);
+      xmlhttp.setRequestHeader("Content-Type", "text/xml");
+      xmlhttp.send(requestXML);
+      xmlhttp.onreadystatechange = function () {
+        if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
+          if (xmlhttp.status == 200) {
+            let result = xmlhttp.responseText.match(/<ns1:out>(\S*)<\/ns1:out>/)[1];
+            resolve(result)
+          } else {
+            reject(xmlhttp.status)
+          }
+        }
+      };
+    });
+  },
+
+  /**
+   * 检测分机是否在线
+   * @param accountcode 企业编号
+   * @param agent 分机（座席）
+   * @param url （webservice服务地址）
+   * @return Promise flag(String),结果: true-注册；false-未注册
+   */
+  async agentreg(accountcode, agent, url) {
+    let flag = '',
+      requestXML = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://server.com">
+            <soapenv:Header/>
+            <soapenv:Body>
+               <ser:agentreg>
+                  <ser:in0>${accountcode}</ser:in0>
+                  <ser:in1>${agent}</ser:in1>
+               </ser:agentreg>
+            </soapenv:Body>
+         </soapenv:Envelope>`;
+    try {
+      flag = await this.webServerPost(url, requestXML);
+      return flag === "true";
+    } catch (error) {
+      console.log('检测分机是否在线', error);
+      MessageBox.alert("系统繁忙，请稍后重试", {showClose: false});
+    }
+  },
+  /**
+   * 获取录音编号
+   * @param caller （主叫-> 坐席号）
+   * @param phone （客户号码）
+   * @param url （webservice服务地址）
+   * @return Promise recid  录音编号
+   */
+  async getRecIdByCaller(caller, phone, url) {
+    let recid = '',
+      requestXML = `<?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <soap:Body>
+            <getCdrRecID xmlns="http://webservices">
+            <in0>${caller}</in0>
+            <in1>${phone}</in1>
+            </getCdrRecID>
+            </soap:Body>
+            </soap:Envelope>`;
+    try {
+      recid = await this.webServerPost(url, requestXML);
+      return recid;
+    } catch (error) {
+      console.log('获取录音编号', error);
+      MessageBox.alert("系统繁忙，请稍后重试", {showClose: false});
+    }
+  },
+  /**
+   * 获取录音时长
+   * @param recId  录音编号
+   * @param url （webservice服务地址）
+   * @return {String} billsec 通话时长
+   */
+  async getBillsec(recId, url) {
+    let billsec = '',
+      requestXML = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://server.com">
+            <soapenv:Header/>
+            <soapenv:Body>
+               <ser:getBillsec>
+                  <ser:in0>${recId}</ser:in0>
+               </ser:getBillsec>
+            </soapenv:Body>
+         </soapenv:Envelope>`;
+    try {
+      billsec = await this.webServerPost(url, requestXML);
+      return billsec;
+    } catch (error) {
+      console.log('获取录音时长', error);
+      MessageBox.alert("系统繁忙，请稍后重试", {showClose: false});
+    }
+  },
+  audioObj: new Audio(),
+  audioPlay(url) {
+    if (this.audioObj.src !== url) {
+      this.audioObj.src = url;
+      this.audioObj.oncanplay = () => {
+        this.audioObj.play();
+      };
+    } else {
+      this.audioObj.play();
+    }
+  },
+  audioPause() {
+    this.audioObj.pause();
+  },
+  /**
+   * 列表序号处理
+   * @param pageIndex 当前页
+   * @param pageSize  每页记录数
+   * @returns {*}
+   * @constructor
+   */
+  IndexMethod(pageIndex,pageSize) {
+    var index=0;
+    return (pageIndex - 1) * pageSize + index + 1;
+  }
+};

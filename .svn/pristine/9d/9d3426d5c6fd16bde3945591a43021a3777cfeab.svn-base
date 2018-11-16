@@ -1,0 +1,123 @@
+<template>
+  <div>
+    <div class="clearfix breadcrumb">
+            <span class="font">当前位置：提交记录 > 提交客服
+                <span v-show="showPage==='submitList'">> 提交列表</span>
+            </span>
+      <el-button type="primary" class="back" @click="showPage='service'" v-show="showPage==='submitList'">返回上一页
+      </el-button>
+    </div>
+    <div v-show="showPage==='service'">
+      <el-form :inline="true" :model="formData" size="small" class="demo-form-inline">
+        <el-form-item label="起止时间：">
+          <el-date-picker v-model="startAndEndTime" type="daterange" start-placeholder="开始日期" end-placeholder="结束日期"
+                          value-format="yyyy-MM-dd" @change="getDate" size="small"></el-date-picker>
+        </el-form-item>
+
+        <!-- <el-form-item label="工单类型：">
+            <el-select v-model="formData.jobType" placeholder="请选择工单类型" class="width200">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="确认信息" value="0"></el-option>
+                <el-option label="补充信息" value="1"></el-option>
+            </el-select>
+        </el-form-item> -->
+
+        <el-form-item label="业务类型：">
+          <jb-businessTypes v-model="formData.businessTypeId" :show="true"></jb-businessTypes>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button type="primary" @click="search()">查询</el-button>
+        </el-form-item>
+      </el-form>
+      <div style="margin-bottom:20px">
+        <el-table :data="tableData" stripe tooltip-effect='light' border>
+          <el-table-column type="index" width="50" :index="$api.IndexMethod(formData.pageIndex,formData.pageSize)"
+                           label="序号"></el-table-column>
+          <el-table-column prop="createDate" label="提交时间" align='center'></el-table-column>
+          <el-table-column prop="id" label="任务编号" align='center'></el-table-column>
+          <el-table-column prop="jobDescription" label="任务说明" align='center'
+                           :show-overflow-tooltip='true'></el-table-column>
+          <el-table-column prop="businessName" label="业务类型" align='center'
+                           :show-overflow-tooltip='true'></el-table-column>
+          <el-table-column prop="submitNum" label="提交数量" align='center'></el-table-column>
+          <el-table-column label="操作" align='center'>
+            <template slot-scope="scope">
+              <el-button type="text" @click="submitList(scope.row)">查看提交列表</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div style="float: right">
+        <jb-pagination @getList="getTaskList" :pageIndex="formData.pageIndex" :pageSize="formData.pageSize" :totalCount="totalCount"></jb-pagination>
+      </div>
+    </div>
+    <div v-show="showPage==='submitList'">
+      <submitList ref="submitList"></submitList>
+    </div>
+  </div>
+</template>
+
+<script>
+  import submitList from "./submitList.vue";
+
+  export default {
+    components: {
+      submitList
+    },
+    data() {
+      return {
+        showPage: "service",
+        startAndEndTime: "",
+        id: "",
+        totalCount: 0,
+        tableData: [],
+        formData: {
+          startTime: "",
+          endTime: "",
+          // jobType: "",
+          businessTypeId: '',
+          pageIndex: 1,
+          pageSize: 10
+        }
+      };
+    },
+    methods: {
+      search() {
+        this.formData.pageIndex = 1;
+        this.getTaskList();
+      },
+      getDate(val) {
+        if (val) {
+          this.formData.startTime = val[0];
+          this.formData.endTime = val[1];
+          return;
+        }
+        this.formData.startTime = "";
+        this.formData.endTime = "";
+      },
+      submitList(row) {
+        this.$refs.submitList.formData.taskId = row.id;
+        this.$refs.submitList.businessName = row.businessName;
+        this.$refs.submitList.getTaskDetail();
+        this.showPage = "submitList";
+      },
+      getTaskList(pageIndex,pageSize) {
+        if (pageIndex) this.formData.pageIndex = pageIndex;
+        if (pageSize) this.formData.pageSize = pageSize;
+        this.$api.vkcPost2(
+          "supermarketloan/crm/submitRecord/pageCustomerServiceTask",
+          this.formData,
+          res => {
+            this.totalCount = res.totalCount;
+            this.tableData = res.data;
+          },
+          "getAllData"
+        );
+      }
+    },
+    created() {
+      this.getTaskList();
+    }
+  };
+</script>

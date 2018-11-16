@@ -1,0 +1,88 @@
+<template>
+    <el-tabs type="border-card">
+        <el-tab-pane label="提交记录">
+            <ul v-for="(item,key) in tableData" :key="item.id" class="mg20">
+                <hr v-if="key>0" />
+                <li class="lh30">
+                    <label>提交时间：</label>
+                    <span class="c409EFF">{{item.createDate}}</span>
+                </li>
+                <li class="lh30">
+                    <label>任务编号：</label>
+                    <span class="c409EFF">{{item.taskId}}</span>
+                </li>
+                <li class="lh30">
+                    <label>处理结果：</label>
+                    <span class="c409EFF mg-r20">{{getDealResult(item.dealResult)}}</span>
+                    <el-button type="text" class="c0ca535" v-if="item.dealResult==='2'" @click="$alert(item.remark,{showClose:false})">查看处理意见</el-button>
+                </li>
+                <li class="lh30">
+                    <label>处理工号：</label>
+                    <span class="c409EFF">{{item.noteName}}</span>
+                </li>
+                <li class="lh30">
+                    <label>处理时间：</label>
+                    <span class="c409EFF">{{item.dealDate}}</span>
+                </li>
+                <li class="text-center mg-t20">
+                    <el-button type="primary" size="small" @click="$communicate.open({id:item.customerServiceOrderId})">沟通记录</el-button>
+                    <el-button type="primary" size="small" @click="$viewRemarks.open({id:item.customerServiceOrderId,taskId:item.taskId})">备注记录</el-button>
+                    <el-button type="primary" size="small" @click="$addRemarks.open({id:item.customerServiceOrderId,taskId:item.taskId})">写备注</el-button>
+                </li>
+            </ul>
+            <div class="text-center mg-t20">
+                <jb-pagination layout="total, prev, pager, next" :totalCount="totalCount" @getList="getSubmitRecord" :pageSize="3"></jb-pagination>
+            </div>
+        </el-tab-pane>
+    </el-tabs>
+</template>
+
+<script>
+import { mapGetters, mapActions } from "vuex";
+export default {
+    data() {
+        return {
+            totalCount: 0,
+            tableData: []
+        };
+    },
+    computed: {
+        ...mapGetters(["workListRow", "workListDetail"])
+    },
+    methods: {
+        getDealResult(code) {
+            switch (code) {
+                case "0":
+                    return "未处理";
+                case "1":
+                    return "通过";
+                case "2":
+                    return "不通过";
+                default:
+                    return code;
+            }
+        },
+        getSubmitRecord(index) {
+            let param = {
+                taskId: this.workListRow.taskId,
+                orderId: this.workListRow.orderId,
+                pageSize: 3,
+                pageIndex: 1
+            };
+            if (index) param.pageIndex = index;
+            return new Promise(resolve => {
+                this.$api.vkcPost2(
+                    "supermarketloan/crm/submitRecord/pageCustomerServiceRecord",
+                    param,
+                    res => {
+                        this.totalCount = res.totalCount;
+                        this.tableData = res.data;
+                        resolve(true);
+                    },
+                    "getAllData"
+                );
+            });
+        }
+    }
+};
+</script>

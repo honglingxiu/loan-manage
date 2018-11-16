@@ -1,0 +1,84 @@
+<template>
+  <div>
+    <el-select v-show="show" v-model="model" placeholder="请选择公司名称" class="width300" @change="select" clearable filterable>
+      <el-option :label="firstLabel" value=""></el-option>
+      <el-option v-for="item in aimedCustomers" :label="item.customerName" :value="item.customerName"
+                 :key="item.id"></el-option>
+    </el-select>
+    <el-select v-show="!show" v-model="model" allow-create placeholder="请选择或输入新的公司名称" class="width300" @change="select" clearable filterable>
+      <el-option v-for="item in aimedCustomers" :label="item.customerName" :value="item.customerName"
+                 :key="item.id"></el-option>
+    </el-select>
+  </div>
+</template>
+
+<script>
+  /*
+  客服列表组件
+  props{
+      value: 绑定的值,
+      firstLabel: 第一项名称  选中值value为空
+  }
+  change 选中值发生变化时触发 回调参数(目前的选中值)
+
+  使用例子：    <jb-customerList v-model="noteName" @change="selectService" :filer="all"></jb-customerList>
+  */
+  import {mapGetters, mapActions} from "vuex";
+
+  export default {
+    name: "jb-customerList",
+    props: {
+      value: {
+        type: String,
+        default: ""
+      },
+      firstLabel: {
+        type: String,
+        default: "全部"
+      },
+      show: {
+        type: Boolean,
+        default: false//是否有全部的选项，默认没有
+      },
+      filer: {
+        type: String,
+        default: "all" //all为展示所有的客户名称，"offline"为仅线下，"loan"为仅贷款，"insurance"为仅赠险
+      }
+    },
+    computed: {
+      model: {
+        get() {
+          return this.value;
+        },
+        set(val) {
+          this.$emit("input", val);
+        }
+      },
+      ...mapGetters(["customerList"]),//后台返回为3种类型的客户 {offline:[] ,insurance:[], loan:[]}
+      aimedCustomers() {//需要展示的客户
+        var obj = [];
+        if (this.filer == "offline") {
+          obj = this.customerList["offline"];
+        } else if (this.filer == "insurance") {
+          obj = this.customerList["insurance"];
+        } else if (this.filer == "loan") {
+          obj = this.customerList["loan"];
+        } else {
+          for (var key in this.customerList) {
+            obj = obj.concat(this.customerList[key]);
+          }
+        }
+        return obj;
+      }
+    },
+    methods: {
+      select(val) {
+        this.$emit("change", val);
+      },
+      ...mapActions(["getCustomerList"])
+    },
+    created() {
+      this.getCustomerList();
+    }
+  };
+</script>

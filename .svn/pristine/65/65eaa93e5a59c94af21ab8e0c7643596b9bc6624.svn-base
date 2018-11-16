@@ -1,0 +1,121 @@
+<template>
+  <el-dialog :title="title" :visible.sync="dialogVisible" width="700px">
+    <hr style="margin-top:-20px"/>
+    <div class="sms-template">
+      <div class="flex align-middle">
+        <div class="left flex-auto">
+          <el-radio-group v-model="selectTemplate" class="flex flex-column" @change="changeTemplate">
+            <el-radio :label="item.id" v-for="item in templateList" :key="item.id">{{item.templateName}}</el-radio>
+          </el-radio-group>
+        </div>
+        <i class="el-icon-arrow-right mg-l10 mg-r10" style="font-size:30px"></i>
+        <div class="right flex-auto">
+          <el-input type="textarea" :rows="14" v-model="currentValue"></el-input>
+        </div>
+      </div>
+      <div class="text-center mg-t20">
+        <el-button type="primary" @click="dialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="confirm()">确 定</el-button>
+      </div>
+    </div>
+  </el-dialog>
+</template>
+
+<script>
+  /*
+  props{
+      value : 绑定的值
+      title : 标题
+      templateType : 模板类型  1短信营销  2呼叫中心
+  }
+  $emit{
+      handConfirm   点击确定按钮后执行父组件的事件
+  }
+  使用例子：  <jb-smsTemplate ref="smsTemplate" v-model="smsTemplate" @handConfirm="formData.message=smsTemplate"></jb-smsTemplate>
+  打开组件 $refs.smsTemplate.dialogVisible = true;
+  */
+  export default {
+    name: "jb-smsTemplate",
+    props: {
+      value: {
+        type: [String, Number],
+        default: ""
+      },
+      title: {
+        type: String,
+        default: "选择模板"
+      },
+      templateType: {
+        type: String,
+        default: "1"
+      }
+    },
+    data() {
+      return {
+        dialogVisible: false,
+        selectTemplate: "",
+        templateList: []
+      };
+    },
+    computed: {
+      currentValue: {
+        get() {
+          return this.value;
+        },
+        set(val) {
+          this.$emit("input", val);
+        }
+      }
+    },
+    methods: {
+      confirm() {
+        this.dialogVisible = false;
+        this.$emit("handConfirm");
+      },
+      getTemplateList() {
+        this.$api.vkcPost2("supermarketloan/crm/findSMSTemplateList", {templateType: this.templateType}, res => {
+          if (res) {
+            this.selectTemplate = res[0].id;
+            this.currentValue = res[0].message;
+            this.templateList = res;
+            console.log(res);
+          }
+        });
+      },
+      changeTemplate(value) {
+        for (const item of this.templateList) {
+          if (item.id === value) {
+            this.currentValue = item.message;
+            return;
+          }
+        }
+      }
+    },
+    created() {
+      this.getTemplateList();
+    }
+  };
+</script>
+<style scoped>
+  .sms-template {
+    margin-top: 20px;
+  }
+
+  .sms-template .left {
+    border: 1px solid #dcdfe6;
+    padding: 15px;
+    height: 222px;
+    overflow-y: auto;
+  }
+
+  .sms-template .left::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sms-template .el-radio + .el-radio {
+    margin-left: 0;
+    margin-top: 15px;
+  }
+</style>
+
+

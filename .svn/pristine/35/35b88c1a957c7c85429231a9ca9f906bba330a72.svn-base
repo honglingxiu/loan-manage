@@ -1,0 +1,427 @@
+<template>
+  <div>
+    <el-form :inline="true" :model="formData" size="small" class="demo-form-inline">
+      <el-form-item label="起止时间：">
+        <el-date-picker v-model="startAndEndTime" type="daterange" start-placeholder="开始日期" end-placeholder="结束日期" value-format="yyyy-MM-dd" @change="getDate" size="small"></el-date-picker>
+      </el-form-item>
+      <el-form-item label="申请号码：">
+        <el-input v-model="formData.phone" placeholder="请输入用户号码" class="width200"></el-input>
+      </el-form-item>
+      <el-form-item label="产品名称：">
+        <el-input v-model="formData.productName" placeholder="请输入用户号码" class="width200"></el-input>
+      </el-form-item>
+      <el-form-item label="接入类型：">
+        <el-select v-model="formData.interfaceType" placeholder="请选择注册平台" class="width200">
+          <el-option label="全部" value=""></el-option>
+          <el-option label="H5" value="H5"></el-option>
+          <el-option label="API" value="API"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="注册平台：">
+        <el-select v-model="formData.platformType" placeholder="请选择注册平台" class="width200" @change="getChannelList">
+          <el-option label="全部" value=""></el-option>
+          <el-option label="安卓" value="Android app"></el-option>
+          <el-option label="iOS" value="IOS app"></el-option>
+          <el-option label="H5" value="H5"></el-option>
+          <el-option label="H5活动推广" value="H5活动推广"></el-option>
+          <el-option label="自主创建" value="自主创建"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="注册渠道：">
+        <el-select v-model="formData.promotionChannel" filterable placeholder="请选择注册渠道" class="width200">
+          <el-option v-for="item in channelList" :key="item.id" :label="item.promotionChannel" :value="item.id"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="分配状态：">
+        <el-select v-model="formData.matchState" placeholder="请选择注册平台" class="width200">
+          <el-option label="全部" value=""></el-option>
+          <el-option label="待分配" value="0"></el-option>
+          <el-option label="已分配" value="1"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="分配客服：">
+        <jb-customerService v-model="formData.matchUserId"></jb-customerService>
+      </el-form-item>
+      <el-form-item label="处理状态：">
+        <el-select v-model="formData.dealState" placeholder="请选择注册平台" class="width200">
+          <el-option label="全部" value=""></el-option>
+          <el-option label="待处理" value="0"></el-option>
+          <el-option label="已处理" value="1"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="处理结果：">
+        <el-select v-model="formData.dealResult" placeholder="请选择处理结果" class="width200">
+          <el-option label="全部" value=""></el-option>
+          <el-option label="通过" value="1"></el-option>
+          <el-option label="不通过" value="2"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-checkbox v-model="isSelectionAll" class="mg-r20" @change="selectAll">全选</el-checkbox>
+        <el-button type="primary" @click="distribution()">分配工单</el-button>
+        <el-button type="primary" @click="getWorkList(1)">查询</el-button>
+      </el-form-item>
+    </el-form>
+
+    <el-table :data="tableData" ref="multipleTable" @selection-change="handleSelectionChange" :row-key="'orderId'" stripe tooltip-effect='light' border>
+      <el-table-column type="selection" v-if="!isSelectionAll" :selectable="(row,index)=>row.matchState==='0'" width="55"></el-table-column>
+      <el-table-column type="index" width="55" label="序号" :index="$api.IndexMethod(formData.pageIndex,formData.pageSize)"></el-table-column>
+      <el-table-column prop="productName" label="产品名称" align='center'></el-table-column>
+      <el-table-column prop="interfacetype" label="接入类型" align='center'></el-table-column>
+      <el-table-column prop="phone" label="申请号码" align='center'></el-table-column>
+      <el-table-column prop="amount" label="申请金额" align='center'></el-table-column>
+      <el-table-column prop="deadline" label="申请期限" align='center'></el-table-column>
+      <el-table-column prop="platformType" label="平台类型" align='center' show-overflow-tooltip></el-table-column>
+      <el-table-column prop="promotionChannel" label="推广渠道" align='center' show-overflow-tooltip></el-table-column>
+      <el-table-column prop="applyTime" label="申请时间" width="180" align='center' show-overflow-tooltip></el-table-column>
+      <el-table-column label="分配状态" align='center'>
+        <template slot-scope="scope">
+          <span v-if="scope.row.matchState==='0'">待分配</span>
+          <span v-else-if="scope.row.matchState==='1'">已分配</span>
+          <span v-else>{{scope.row.matchState}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="matchNoteName" label="分配客服" align='center'></el-table-column>
+      <el-table-column label="处理状态" align='center'>
+        <template slot-scope="scope">
+          <span v-if="scope.row.dealState==='0'">待处理</span>
+          <span v-else-if="scope.row.dealState==='1'">已处理</span>
+          <span v-else>{{scope.row.dealState}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="dealResult" label="处理结果" align='center'>
+        <template slot-scope="scope">
+          <span v-if="scope.row.dealResult==='0'">待处理</span>
+          <span v-else-if="scope.row.dealResult==='1'">通过</span>
+          <span v-else-if="scope.row.dealResult==='2'">不通过</span>
+          <span v-else>{{scope.row.dealResult}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align='center'>
+        <template slot-scope="scope">
+          <el-button type="text" @click="$emit('viewDetail',scope.row)">详情</el-button>
+          <el-button type="text" v-show="scope.row.matchState==='1'&&scope.row.dealState==='0'" @click="recovery(scope.row)">回收</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <div class="pull-right mg-t20">
+      <jb-pagination :totalCount="totalCount" @getList="getWorkList"></jb-pagination>
+    </div>
+    <el-dialog title="分配" :visible.sync="dialogVisible" width="700px">
+      <div slot="title">
+        <span>分配</span>
+        <hr/>
+      </div>
+      <el-form label-position="right" label-width="130px" style="margin-top:-30px">
+        <el-form-item label="当前可分配数量：">
+          <span class="cred">{{quantityAllotted}}</span>
+        </el-form-item>
+        <el-form-item label="分配客服：">
+          <ul>
+            <li v-for="(item,key) in formData.matchOrderItem" :key="key" class="mg-b15">
+              <jb-customerService v-model="item.matchUserId" firstLabel="请选择客服" @change="selectService(item)"></jb-customerService>
+              <el-input type="number" v-model.number="item.matchNum" @blur.prevent="()=> checkNum(item.matchNum)" placeholder="分配数量" class="width200"></el-input>
+              <i class="el-icon-delete jb-icon-delete fs20 mg-l15" @click="deleteDistribution(key)"></i>
+              <i v-show="key===formData.matchOrderItem.length-1" class="el-icon-plus jb-icon-plus fs20 mg-l15" @click="addDistribution()"></i>
+            </li>
+          </ul>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="text-center">
+        <el-button type="primary" @click="dialogVisible = false">取 消</el-button>
+        <el-button type="primary" :loading="loading" @click="confirmDistribution()">确 定</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+export default {
+    data() {
+        return {
+            dialogVisible: false,
+            loading: false,
+            startAndEndTime: "",
+            totalCount: 0,
+            tableData: [],
+            channelList: [],
+            isSelectionAll: false,
+            noMatchNum: 0, //接口返回的未分配数量
+            noMatchChoiceIds: [], //所有未分配工单id数组
+            formData: {
+                taskId: "",
+                startTime: "",
+                endTime: "",
+                phone: "",
+                productName: "",
+                interfaceType: "",
+                platformType: "",
+                promotionChannel: "",
+                matchState: "",
+                matchUserId: "",
+                dealState: "",
+                dealResult: "",
+                pageIndex: 1,
+                pageSize: 10,
+                choiceItem: [], //表格操作选中的工单id数组
+                matchOrderItem: [
+                    //分配客服工单数组
+                    {
+                        matchNum: "",
+                        matchUserId: ""
+                    }
+                ]
+            }
+        };
+    },
+    computed: {
+        quantityAllotted() {
+            //选中的工单数量
+            var num = this.isSelectionAll ? this.noMatchNum : this.formData.choiceItem.length;
+            return num;
+        }
+    },
+    methods: {
+        selectAll() {
+            this.$message({
+                type: "success",
+                message: "当前选中" + this.quantityAllotted + "条数据"
+            });
+        },
+        checkNum(num) {
+            if (num === "" || num < 0) return false;
+            else if (!/^[1-9]\d*$/.test(num)) {
+                this.$message({
+                    type: "warning",
+                    message: "分配数量只能输入正整数"
+                });
+                return false;
+            } else if (this.canDistributionNum() >= 0) {
+                return true;
+            }
+            this.$message.error("分配数量总和不能超过当前可分配数量");
+            return false;
+        },
+        getDate(val) {
+            if (val) {
+                this.formData.startTime = val[0];
+                this.formData.endTime = val[1];
+                return;
+            }
+            this.formData.startTime = "";
+            this.formData.endTime = "";
+        },
+        selectService(val) {
+            let flag = 0;
+            for (const item of this.formData.matchOrderItem) {
+                item.matchUserId === val.matchUserId ? flag++ : "";
+            }
+            if (flag > 1) {
+                this.$message({
+                    type: "warning",
+                    message: "选择的客服不能重复!"
+                });
+                val.matchUserId = "";
+            }
+        },
+        canDistributionNum() {
+            //剩余分配数量
+            let resNum = 0;
+            for (const item of this.formData.matchOrderItem) {
+                if (item.matchNum !== "") resNum += Number(item.matchNum);
+            }
+            return this.quantityAllotted - resNum;
+        },
+        addDistribution() {
+            if (this.checkMatchOrderItem()) {
+                var flag = false;
+                this.formData.matchOrderItem.forEach(item => {
+                    //需校验是否还是可分配数量
+                    if (!this.checkNum(item.matchNum)) {
+                        flag = true;
+                        return; //结束遍历
+                    }
+                });
+                if (flag) return;
+                if (this.canDistributionNum() <= 0) {
+                    this.$message({
+                        type: "warning",
+                        message: "分配数额已满"
+                    });
+                    return;
+                }
+                for (const item of this.formData.matchOrderItem) {
+                    if (item.matchNum === "" || item.matchUserId === "") return;
+                }
+                this.formData.matchOrderItem.push({
+                    matchNum: this.canDistributionNum(),
+                    matchUserId: ""
+                });
+            }
+        },
+        deleteDistribution(key) {
+            if (this.formData.matchOrderItem.length === 1) return;
+            this.formData.matchOrderItem.splice(key, 1);
+        },
+        distribution() {
+            if (this.quantityAllotted > 0) {
+                //this.formData.matchOrderItem = this.$options.data().formData.matchOrderItem;
+                //重置分配
+                this.formData.matchOrderItem = [
+                    {
+                        matchNum: "",
+                        matchUserId: ""
+                    }
+                ];
+                //this.formData.matchOrderItem[0].matchNum=this.quantityAllotted;
+                this.dialogVisible = true;
+            } else {
+                this.$message({
+                    type: "warning",
+                    message: "请选择工单!"
+                });
+            }
+        },
+        checkMatchOrderItem() {
+            //校验客服、工单数量必填，可分配数量为0才可提交
+            for (const item of this.formData.matchOrderItem) {
+                if (item.matchUserId === "") {
+                    this.$alert("请选择客服", {
+                        showClose: false
+                    });
+                    return false;
+                }
+                if (item.matchNum === "") {
+                    this.$alert("请输入分配数量", {
+                        showClose: false
+                    });
+                    return false;
+                }
+            }
+            return true;
+        },
+        confirmDistribution() {
+            if (!this.checkMatchOrderItem()) return; //校验必填
+            var flag = false;
+            this.formData.matchOrderItem.forEach(item => {
+                //需重新校验分配数量是否合法
+                if (!this.checkNum(item.matchNum)) {
+                    flag = true;
+                    return; //结束遍历
+                }
+            });
+            if (flag) {
+                return;
+            }
+            if (!this.canDistributionNum() == 0) {
+                this.$message({
+                    type: "warning",
+                    message: "工单数量未分配完毕"
+                });
+                return false;
+            }
+            if (this.isSelectionAll) {
+                //全选的操作就需要往后台传空数组
+                this.formData.choiceItem = [];
+            }
+            this.loading = true;
+            console.log(this.formData);
+            this.$api.vkcPost2(
+                "supermarketloan/crm/customerservice/manage/matchOrder",
+                this.formData,
+                res => {
+                    console.log(res);
+                    if (res.code === "0") {
+                        this.getWorkList().then(res => {
+                            this.$message({
+                                type: "success",
+                                message: "分配成功!"
+                            });
+                            this.dialogVisible = false;
+                            this.loading = false;
+                        });
+                    }
+                    this.isSelectionAll = false; //将全选按钮置为false
+                    //重置分配
+                    this.formData.matchOrderItem = [
+                        {
+                            matchNum: "",
+                            matchUserId: ""
+                        }
+                    ];
+                    this.formData.choiceItem = [];
+                },
+                "getAllData"
+            );
+        },
+        recovery(row) {
+            this.$confirm("是否确定回收?", "提示")
+                .then(() => {
+                    this.$api.vkcPost2(
+                        "supermarketloan/crm/customerservice/manage/recycle",
+                        { orderId: row.orderId },
+                        res => {
+                            if (res.code === "0") {
+                                row.matchState = "0";
+                                this.noMatchNum++;
+                                if (this.isSelectionAll) {
+                                    this.$message({
+                                        type: "success",
+                                        message: "回收成功!当前选中" + this.quantityAllotted + "条数据"
+                                    });
+                                } else {
+                                    this.$message({
+                                        type: "success",
+                                        message: "回收成功!"
+                                    });
+                                }
+                            }
+                        },
+                        "getAllData"
+                    );
+                })
+                .catch(() => {});
+        },
+        handleSelectionChange(rows) {
+            this.$message({
+                type: "success",
+                message: "当前选中" + rows.length + "条"
+            });
+            this.formData.choiceItem = [];
+            //this.formData.matchOrderItem[0].matchNum=rows.length;//设置默认的分配数量
+            if (rows) {
+                rows.forEach(row => {
+                    this.formData.choiceItem.push(row.orderId);
+                });
+            }
+        },
+        getChannelList() {
+            this.$api.vkcPost("supermarketloan/mgr/loanapply/getpromotionchannelitem", { param: { platformType: this.formData.platformType } }, res => {
+                this.formData.promotionChannel = "";
+                this.channelList = res;
+            });
+        },
+        getWorkList(pageIndex, pageSize) {
+            this.formData.pageIndex = pageIndex || this.formData.pageIndex;
+            this.formData.pageSize = pageSize || this.formData.pageSize;
+            return new Promise(resolve => {
+                this.$api.vkcPost2(
+                    "supermarketloan/crm/customerservice/manage/orderPage",
+                    this.formData,
+                    res => {
+                        this.noMatchNum = res.data.noMatchNum;
+                        this.totalCount = res.totalCount;
+                        this.tableData = res.data.orderPageResul;
+                        resolve(true);
+                    },
+                    "getAllData"
+                );
+            });
+        }
+    },
+    created() {
+        this.getWorkList();
+    }
+};
+</script>

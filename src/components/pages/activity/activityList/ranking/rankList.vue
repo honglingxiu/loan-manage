@@ -1,0 +1,86 @@
+<template>
+  <div class="mg15 mg-l0">
+    <div class="mg15 mg-l0" style="line-height:50px">
+      <span>客户名称：</span>
+      <el-input v-model="customerName" placeholder="请输入活动名称" style="width:200px"></el-input>
+      <span>产品名称：</span>
+      <el-input v-model="productName" placeholder="请输入活动名称" style="width:200px"></el-input>
+      <el-button type="text" icon="search" @click="getRankList(1)">查询</el-button>
+    </div>
+    <div>
+      <el-table :data="rankList" stripe width="100%" border class="mg-t15">
+        <el-table-column type="index" width="50" :index="$api.IndexMethod(pageIndex,pageSize)"
+                         label="序号"></el-table-column>
+        <el-table-column prop="customerName" label="客户名称" align="center"></el-table-column>
+        <el-table-column prop="productName" label="产品名称" align="center"></el-table-column>
+        <el-table-column prop="operation" label="操作" align="center">
+          <template slot-scope="scope">
+            <el-button type="text" @click="rankDetail(scope.row.customerName)">详情</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="mg15 mg-r0 pull-right">
+        <jb-pagination @getList="getRankList" :pageIndex="pageIndex" :totalCount="totalCount"></jb-pagination>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+
+  export default {
+    data() {
+      return {
+        activityId: "",
+        pageIndex: 1,
+        pageSize: 10,
+        totalCount: 0,
+        rankList: [],
+        customerName: "",
+        productName: ""
+      };
+    },
+    methods: {
+      rankDetail(name) {
+        let rankInfo = {
+          eventMarketId: this.activityId,
+          customerName: name
+        }
+        this.$api.setSStorage('rankInfo', rankInfo, true);
+        this.$router.push('ranking/rankDetail');
+      },
+      getRankList(pageIndex,pageSize) {
+        if (pageIndex) this.pageIndex = pageIndex;
+        if (pageSize) this.pageSize = pageSize;
+        let param = {
+          param: {
+            productName: this.productName,
+            customerName: this.customerName,
+            pageIndex: this.pageIndex,
+            pageSize: this.pageSize
+          }
+        };
+        this.$api.vkcPost(
+          "supermarketloan/mgr/eventmarket/bidranking/listpage",
+          param,
+          res => {
+            this.rankList = res.data;
+            this.totalCount = res.totalCount;
+          },
+          "all"
+        );
+      }
+    },
+    created() {
+      let d = this.$api.getSStorage('actListRow');
+      if (!d) {
+        this.$router.back();
+        return;
+      }
+      ;
+      this.activityId = d.id;
+      this.$store.commit("CHANGE_TITLE", ["当前选择活动", d.name]);
+      this.getRankList();
+    }
+  };
+</script>

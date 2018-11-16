@@ -1,0 +1,236 @@
+<template>
+	<div>
+		<el-form :model="message" ref="message" label-position="left" label-width="100px" :rules="rules">
+			<el-form-item label="消息标题：" prop="title">
+				<el-input v-model="message.title" placeholder="请输入内容" @change="getTitle"></el-input>
+			</el-form-item>
+			<el-form-item label="消息内容：" prop="content">
+				<el-input type="textarea" :autosize="{ minRows: 7, maxRows: 4}" placeholder="请输入内容" v-model="message.content" @change="getContent"></el-input>
+			</el-form-item>
+			<el-form-item label="定时发送：" prop="isTiming">
+				<el-radio-group v-model="isTiming" @change="getRadio">
+					<el-radio class="radio" :label="1">开启</el-radio>
+					<el-radio class="radio" :label="0">关闭</el-radio>
+				</el-radio-group>
+			</el-form-item>
+			<el-form-item v-show="isTiming=='1'" prop="time">
+				本消息将于
+				<el-date-picker v-model="message.time" type="datetime" placeholder="选择日期时间" :picker-options="pickerBeginDateAfter" @change="changeTime">
+				</el-date-picker> 发送
+			</el-form-item>
+		</el-form>
+		<div class="mg15 text-center">
+			<el-button @click="cancel">取消</el-button>
+			<el-button type="primary" @click="confirm('message')">确定</el-button>
+		</div>
+	</div>
+</template>
+
+<script>
+export default {
+    props: ["message"],
+    watch: {
+        message: function(msg) {
+            this.message = msg;
+            if (this.message.time != "" && this.message.time != null) {
+                this.isTiming = 1;
+            } else {
+                this.isTiming = 0;
+            }
+        }
+    },
+    data() {
+        return {
+            formNews: {
+                newTitle: "",
+                newContent: "",
+                dateTime: "",
+                openRadio: "1"
+            },
+            isSelectedTimeValid: false,
+            isTiming: 1,
+            rules: {
+                title: [{ required: true, message: "请输入活动名称", trigger: "blur" }, { min: 1, max: 20, message: "长度在 1 到 20 个字符", trigger: "blur" }],
+                content: [{ required: true, message: "请填消息内容", trigger: "blur" }]
+            },
+            pickerBeginDateAfter: {
+                disabledDate(time) {
+                    // console.log("传递的参数："+time.getTime());
+                    return time.getTime() < Date.now() - 79200000;
+                }
+            }
+        };
+    },
+    methods: {
+        getTitle(title) {
+            this.message.title = title;
+        },
+        getContent(content) {
+            this.message.content = content;
+        },
+        getRadio(checkedRadio) {
+            this.isTiming = checkedRadio;
+        },
+        changeTime: function(selectTime) {
+            //检测选择的世界是否合理
+            let _this = this;
+            if (selectTime == null || selectTime == "") {
+                this.$message("请选择时间！");
+                this.isSelectedTimeValid = false;
+                return;
+            }
+            let now = new Date();
+            let nowTime = now.getTime();
+
+            let datePattern = /\d{4}-{1}\d{2}-{1}\d{2}/g;
+            let date = datePattern.exec(selectTime);
+            date = date.toString();
+            let dateArr = date.split("-");
+            console.log("匹配的日期：" + dateArr);
+            let selectedYear = dateArr[0];
+            let selectedMonth = dateArr[1];
+            let selectedDay = dateArr[2];
+
+            let timePattern = /\d{2}:\d{2}:\d{2}/g;
+            let time = timePattern.exec(selectTime);
+            time = time.toString();
+            let timeArr = time.split(":");
+            console.log("匹配到的时间：" + time + ",timeArr:" + timeArr);
+            let selectedHour = timeArr[0];
+            let selectedMinute = timeArr[1];
+            let selectedSecond = timeArr[2];
+
+            let selectedFormatTime = new Date(selectedYear, selectedMonth - 1, selectedDay, selectedHour, selectedMinute, selectedSecond);
+
+            let selectedTime = selectedFormatTime.getTime();
+            console.log("");
+
+            if (selectedTime - nowTime < 113460) {
+                this.$message.error("您选择的时间距离现在太近！");
+                this.isSelectedTimeValid = false;
+                return;
+            } else {
+                this.isSelectedTimeValid = true;
+                this.message.time = selectTime;
+            }
+            console.log("当前时间为：" + now.getHours() + "，选中的时间：" + selectTime);
+        },
+        isTimeValid(timeData) {
+            if (timeData == "" || timeData == null) {
+                this.isSelectedTimeValid = false;
+                return;
+            } else {
+                let datePattern = /\d{4}-{1}\d{2}-{1}\d{2}/g;
+                let date = datePattern.exec(timeData);
+                if (date == null) {
+                    this.isSelectedTimeValid = false;
+                    this.$message.error("日期格式不正确");
+                    return;
+                }
+
+                let timePattern = /\d{2}:\d{2}:\d{2}/g;
+                let time = timePattern.exec(timeData);
+                console.log("传入的时间：" + timeData + ",匹配情况：" + time);
+                if (time == null) {
+                    this.isSelectedTimeValid = false;
+                    this.$message.error("时间格式不正确");
+                    return;
+                }
+
+                date = date.toString();
+                let dateArr = date.split("-");
+                console.log("匹配的日期：" + dateArr);
+                let year = dateArr[0];
+                let month = dateArr[1];
+                let day = dateArr[2];
+
+                time = time.toString();
+                let timeArr = time.split(":");
+                console.log("匹配到的时间：" + time + ",timeArr:" + timeArr);
+                let hour = timeArr[0];
+                let minute = timeArr[1];
+                let second = timeArr[2];
+                let msgFormatTime = new Date(year, month - 1, day, hour, minute, second);
+                let msgTime = msgFormatTime.getTime();
+
+                let now = new Date();
+                let nowTime = now.getTime();
+                if (msgTime < nowTime) {
+                    this.$message.error("设置的时间已经过期");
+                    this.isSelectedTimeValid = false;
+                    return;
+                } else {
+                    this.isSelectedTimeValid = true;
+                }
+            }
+        },
+        judgeDataIsNull(data) {
+            //判断数据是否为空，空字符串或空对象都返回true，否则返回false，即数据不为空
+            if (data == undefined || data == null || data == "" || JSON.stringify(data) == "{}") {
+                return true;
+            } else {
+                return false;
+            }
+        },
+        cancel() {
+            // this.$refs["message"].resetFields();//重置表单数据
+            // this.isTiming = 1;
+            this.$emit("close");
+        },
+        confirm(formName) {
+            let _this = this;
+            _this.$refs[formName].validate(valid => {
+                if (valid) {
+                    // alert('submit!');
+                    let sendTime = _this.message.time;
+                    if (_this.isTiming == 1) {
+                        //开启了定时发送
+                        _this.isTimeValid(_this.message.time);
+                        if (_this.isSelectedTimeValid == false) {
+                            this.$message.error("请选择合理的发送时间！");
+                            return;
+                        }
+                    } else {
+                        sendTime = "";
+                    }
+                    let param = {
+                        param: {
+                            id: _this.message.id,
+                            title: _this.message.title,
+                            content: _this.message.content,
+                            time: sendTime,
+                            saveOrUpdate: "1",
+                            isTiming: _this.isTiming + ""
+                        }
+                    };
+                    _this.$api.vkcPost(
+                        "supermarketloan/mgr/saveOrUpdateMessageInfo",
+                        param,
+                        res => {
+                            if (!_this.judgeDataIsNull(res)) {
+                                if (res.code == "0" || res.code == 0) {
+                                    this.$message({
+                                        message: res.msg,
+                                        type: "success"
+                                    });
+                                    _this.cancel();
+                                    // setTimeout(function(){
+
+                                    // },50);
+                                } else {
+                                    this.$message.error(res.msg);
+                                }
+                            }
+                        },
+                        "all"
+                    );
+                } else {
+                    // console.log('error submit!!');
+                    this.$message.error("请输入相关数据！");
+                    return false;
+                }
+            });
+        }
+    }
+};
+</script>

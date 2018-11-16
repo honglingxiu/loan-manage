@@ -1,0 +1,43 @@
+<template>
+    <div class="wrapper">
+        <v-head></v-head>
+        <v-sidebar></v-sidebar>
+        <div class="content">
+            <div style="min-width: 1100px;">
+                <transition name="move" mode="out-in">
+                    <router-view></router-view>
+                </transition>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+import vHead from "./Header.vue";
+import vSidebar from "./Sidebar.vue";
+export default {
+    components: {
+        vHead,
+        vSidebar
+    },
+    watch: {
+        $route(to, from) {
+            if (!localStorage.getItem("loanuser")) {
+                this.$router.push("/login");
+            }
+        }
+    },
+    mounted: function() {
+        this.$nextTick(function() {
+            OnRequestFailureResponse = (LineNo, StatusCode, ReasonPhrase) => {
+                fnOnRequestFailureResponse(LineNo, StatusCode, ReasonPhrase);
+                this.$message({
+                    message: "通话结束",
+                    type: "warning"
+                });
+                console.log('OnRequestFailureResponse');
+            };
+        });
+    }
+};
+</script>

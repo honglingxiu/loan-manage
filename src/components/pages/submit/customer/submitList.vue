@@ -1,0 +1,128 @@
+<template>
+  <div>
+    <el-form :inline="true" :model="formData" size="small" class="demo-form-inline">
+      <el-form-item label="用户号码：">
+        <el-input v-model="formData.phone" placeholder="请输入用户号码" class="width200"></el-input>
+      </el-form-item>
+      <el-form-item label="用户姓名：">
+        <el-input v-model="formData.name" placeholder="请输入用户姓名" class="width200"></el-input>
+      </el-form-item>
+      <el-form-item label="活动ID：">
+        <jb-eventMarket v-model="formData.eventMarketId"></jb-eventMarket>
+      </el-form-item>
+      <el-form-item label="平台类型：">
+        <jb-platformType v-model="formData.platformType"></jb-platformType>
+      </el-form-item>
+      <el-form-item label="推广渠道：">
+        <jb-promotionChannel v-model="formData.promotionChannel" :platformType="formData.platformType"></jb-promotionChannel>
+      </el-form-item>
+      <el-form-item label="二级渠道：">
+        <jb-promotionChannelChild v-model="formData.promotionChannelChild" :promotionChannelId="formData.promotionChannel" ></jb-promotionChannelChild>
+      </el-form-item>
+      <el-form-item label="提交状态：">
+        <el-select v-model="formData.submitState" placeholder="请选择提交状态" class="width200">
+          <el-option label="全部" value=""></el-option>
+          <el-option label="提交成功" value="1"></el-option>
+          <el-option label="提交失败" value="2"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="search()">查询</el-button>
+      </el-form-item>
+    </el-form>
+    <div style="margin-bottom:20px">
+      <el-table :data="tableData" stripe tooltip-effect='light' border>
+        <el-table-column label="序号" align='center' type="index"
+                         :index="$api.IndexMethod(formData.pageIndex,formData.pageSize)"
+                         width="55"></el-table-column>
+        <el-table-column prop="phone" label="用户号码" align='center'></el-table-column>
+        <el-table-column prop="name" label="用户姓名" align='center'></el-table-column>
+        <el-table-column prop="eventMarketId" label="活动ID" align='center'></el-table-column>
+        <el-table-column prop="platformType" label="平台类型" align='center'></el-table-column>
+        <el-table-column prop="promotionChannel" label="推广渠道" align='center'></el-table-column>
+        <el-table-column prop="promotionChannelChild" label="二级渠道" align='center'></el-table-column>
+        <el-table-column prop="customerName" label="提交客户" align='center'></el-table-column>
+        <el-table-column prop="submitType" label="提交类型" align='center' v-if="submitWay==='API'">
+          <!-- API -->
+          <template slot-scope="scope">
+            <span v-if="scope.row.submitType==='2'">赠险</span>
+            <span v-else>贷款</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="productName" label="提交产品" align='center' v-if="submitWay==='API'"></el-table-column>
+        <!-- API -->
+        <el-table-column prop="submitState" label="提交状态" align='center'>
+          <template slot-scope="scope">
+            <span v-if="scope.row.submitState === '1'">提交成功</span>
+            <span v-else-if="scope.row.submitState === '2'">提交失败</span>
+            <span v-else>未提交</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="remark" label="备注" align='center' v-if="submitWay==='API'"></el-table-column>
+        <!-- API -->
+      </el-table>
+    </div>
+    <div style="float: right">
+      <jb-pagination @getList="getTaskDetail" :pageIndex="formData.pageIndex" :pageSize="formData.pageSize" :totalCount="totalCount"></jb-pagination>
+    </div>
+  </div>
+</template>
+
+<script>
+  export default {
+    data() {
+      return {
+        submitWay: "线下",
+        totalCount: 0,
+        tableData: [],
+        formData: {
+          taskId: "",
+          phone: "",
+          name: "",
+          eventMarketId:"",
+          platformType: "",
+          promotionChannel: "",
+          promotionChannelChild:"",
+          submitState: "",
+          pageIndex: 1,
+          pageSize: 10
+        }
+      };
+    },
+    methods: {
+      search() {
+        this.formData.pageIndex = 1;
+        this.getTaskDetail();
+      },
+      getTaskDetail(pageIndex,pageSize) {
+        if (pageIndex) this.formData.pageIndex = pageIndex;
+        if (pageSize) this.formData.pageSize = pageSize;
+        this.$api.vkcPost2(
+          "supermarketloan/crm/submitRecord/pageCustomerOrder",
+          this.formData,
+          res => {
+            this.totalCount = res.totalCount;
+            this.tableData = res.data;
+          },
+          "getAllData"
+        );
+      }
+    },
+    watch:{
+      formData:{
+        deep:true,
+        handler:function (formData) {
+          if(formData.platformType==""){
+            this.formData.promotionChannel="";
+            this.formData.promotionChannelChild="";
+          }
+          if(formData.promotionChannel==""){
+            this.formData.promotionChannelChild="";
+          }
+        }
+      }
+    },
+    created() {
+    }
+  };
+</script>

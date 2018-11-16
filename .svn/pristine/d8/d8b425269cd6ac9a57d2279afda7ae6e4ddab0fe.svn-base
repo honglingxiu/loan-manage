@@ -1,0 +1,138 @@
+<template>
+    <el-form :model="formData" ref="formData" label-position="left">
+        <el-form-item prop="eventMarketName" label="活动名称：" label-width="120px" :rules="[{ required:fromWhere!=='editActivity', message: '活动名称不能为空'}]">
+            <span v-if="fromWhere==='editActivity'">{{formData.eventMarketName}}</span>
+            <el-input placeholder="请输入活动名称" v-model="formData.eventMarketName" style="width:300px" v-else></el-input>
+        </el-form-item>
+        <el-form-item label="活动链接：" label-width="120px" v-show="fromWhere==='editActivity'">
+            <a :href="formData.eventMarketUrl" style="color:#20a0ff" target="_blank">{{formData.eventMarketUrl}}</a>
+        </el-form-item>
+
+        <el-form-item label="竞价开放状态：" label-width="120px" required>
+            <el-radio v-model="formData.openBid" label="1">开放客户</el-radio>
+            <el-radio v-model="formData.openBid" label="0">不开放客户</el-radio>
+        </el-form-item>
+
+        <el-form-item prop="homeBanner" label="活动图片：" label-width="120px" required>
+            <el-upload class="my-uploader" :action="uploadImgUrl" :show-file-list="false" :on-success="handleSuccess" :on-error="handleError">
+                <div @click="selectUpload('homeBanner')">
+                    <img v-if="showImg.homeBanner" :src="showImg.homeBanner" class="avatar">
+                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                </div>
+            </el-upload>
+            <div style="color:red">
+                <p> 1.主页图片建议大小：720*235</p>
+                <p> 2.上传图片文件名称必须为数字或英文，不能包含中文，空格，特殊符号等</p>
+            </div>
+        </el-form-item>
+
+        <el-form-item prop="shareWords" label="活动分享语：" label-width="120px" :rules="shareTxtRules" required>
+            <el-input placeholder="不超过20个字" v-model="formData.shareWords" style="width:300px"></el-input>
+        </el-form-item>
+
+        <el-form-item prop="productListBanner" label="列表页：" label-width="120px" required>
+            <el-upload class="my-uploader" :action="uploadImgUrl" :show-file-list="false" :on-success="handleSuccess" :on-error="handleError">
+                <div @click="selectUpload('productListBanner')">
+                    <img v-if="showImg.productListBanner" :src="showImg.productListBanner" class="avatar">
+                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                </div>
+            </el-upload>
+            <div style="color:red">
+                <p> 1.列表页广告图片建议大小：720*485</p>
+                <p> 2.上传图片文件名称必须为数字或英文，不能包含中文，空格，特殊符号等</p>
+            </div>
+        </el-form-item>
+        <el-form-item prop="productListBannerParam" label="" label-width="120px" :rules="[{ required: true, message: '跳转链接不能为空'}]">
+            <el-input placeholder="列表页banner图跳转链接" v-model="formData.productListBannerParam" style="width:300px"></el-input>
+        </el-form-item>
+
+        <el-form-item prop="finishBanner" label="提交结果页：" label-width="120px" required>
+            <el-upload class="my-uploader" :action="uploadImgUrl" :show-file-list="false" :on-success="handleSuccess" :on-error="handleError">
+                <div @click="selectUpload('finishBanner')">
+                    <img v-if="showImg.finishBanner" :src="showImg.finishBanner" class="avatar">
+                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                </div>
+            </el-upload>
+            <div style="color:red">
+                <p> 1.提交页广告图片建议大小：720*485</p>
+                <p> 2.上传图片文件名称必须为数字或英文，不能包含中文，空格，特殊符号等</p>
+            </div>
+        </el-form-item>
+        <el-form-item prop="finishBannerParam" label="" label-width="120px" :rules="[{ required: true, message: '跳转链接不能为空'}]">
+            <el-input placeholder="提交结果页banner图跳转链接" v-model="formData.finishBannerParam" style="width:300px"></el-input>
+        </el-form-item>
+    </el-form>
+</template>
+
+<script>
+export default {
+    props: ["fromWhere", "allData"],
+    watch: {
+        allData(n, o) {
+            this.formData = { ...n };
+            this.showImg = {
+                homeBanner: n.homeBannerUrl,
+                productListBanner: n.productListBannerUrl,
+                finishBanner: n.finishBannerUrl
+            };
+        }
+    },
+    data() {
+        let shareTxtRules = (rule, value, callback) => {
+            let val = value.replace(/(^\s*)|(\s*$)/g, "");
+            if (val === "") {
+                callback(new Error("活动分享语不能为空"));
+            } else {
+                val.length > 20 ? callback(new Error("活动分享语不能超过20个字")) : callback();
+            }
+        };
+        return {
+            uploadImgUrl: this.$api.baseUrl() + "supermarketloan/mgr/eventmarket/uploadeventmarketimg", //图片上传接口
+            shareTxtRules: [{ validator: shareTxtRules }],
+            selectImg: "",
+            showImg: {
+                homeBanner: "",
+                productListBanner: "",
+                finishBanner: ""
+            },
+            formData: {
+                eventMarketUrl: "",
+                eventMarketName: "",
+                shareWords: "",
+                homeBanner: "",
+                productListBanner: "",
+                productListBannerParam: "",
+                finishBanner: "",
+                finishBannerParam: "",
+                openBid:"1"
+            }
+        };
+    },
+    methods: {
+        selectUpload(d) {
+            this.selectImg = d;
+        },
+        handleSuccess(response, file, fileList) {
+            // console.log(response);
+            // console.log(file);
+            // console.log(fileList);
+            this.showImg[this.selectImg] = file.url;
+            if (response != "" && response != null) {
+                if (response.code == "0" || response.code == 0) {
+                    this.formData[this.selectImg] = file.name;
+                }
+            }
+        },
+        handleError(err, file, fileList) {
+            console.log("上传失败的回调");
+            // console.log(err);
+            // console.log(file);
+            // console.log(fileList);
+        },
+        resetForm() {
+            for (let key in this.showImg) this.showImg[key] = "";
+            this.$refs["formData"].resetFields();
+        }
+    }
+};
+</script>

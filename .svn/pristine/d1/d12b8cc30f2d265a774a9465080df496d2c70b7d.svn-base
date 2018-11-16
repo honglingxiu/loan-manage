@@ -1,0 +1,170 @@
+<template>
+  <div class="mg15 mg-l0">
+    <el-button type="primary" size="medium" class="pull-right" style="margin-bottom:15px" @click="addAmount">新增
+    </el-button>
+    <div>
+      <el-table :data="amountList" stripe width="100%" border class="mg-t15">
+        <el-table-column type="index" width="50" :index="$api.IndexMethod(pageIndex,pageSize)"
+                         label="序号"></el-table-column>
+        <el-table-column type="index" label="代码" width="80px"></el-table-column>
+        <el-table-column prop="minAmount" label="金额范围（单位：元）">
+          <template slot-scope="scope">
+                        <span>
+                            {{scope.row.minAmount}}-{{scope.row.maxAmount}}
+                        </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="metaDesc" label="主页表单" min-width="200">
+          <template slot-scope="scope">
+            <div style="line-height:36px">
+              <el-button type="primary" v-for="(tag,key) in scope.row.metaDesc" size="mini" :key="key"
+                         style="margin:0 10px 0 0">{{tag.dataName}}
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="jumpList" label="跳转产品列表" width="120">
+          <template slot-scope="scope">
+            <span v-show="scope.row.jumpList=='0'">是</span>
+            <span v-show="scope.row.jumpList=='1'">否</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="onlineState" label="状态" width="88">
+          <template slot-scope="scope">
+            <span v-show="scope.row.onlineState=='0'" style="color:green">使用中</span>
+            <span v-show="scope.row.onlineState=='1'" style="color:red;">已禁用</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="operation" label="操作">
+          <template slot-scope="scope">
+            <el-button type="text" @click="editAmount(scope.row)">编辑</el-button>
+            <el-button type="text" @click="confirmDisabledAmount(scope.row)" v-show="scope.row.onlineState=='0'">禁用
+            </el-button>
+            <el-button type="text" @click="confirmDisabledAmount(scope.row)" v-show="scope.row.onlineState=='1'">启用
+            </el-button>
+            <el-button type="text" @click="linkto('setAmount/productRink',scope.row)" v-show="scope.row.jumpList=='0'">
+              产品排名
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="mg15 mg-r0 pull-right" v-if="amountList.length>0">
+        <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="pageIndex"
+                       :page-sizes="[10, 20, 50, 100]" :page-size="pageSize"
+                       layout="total, sizes, prev, pager, next, jumper" :total="totalCount"></el-pagination>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  export default {
+    data() {
+      return {
+        activityId: "",
+        pageIndex: 1,
+        pageSize: 10,
+        totalCount: 0,
+        amountList: []
+      };
+    },
+    methods: {
+      linkto(link, row) {
+        let d = {id: row.eventMarketId, amount: row.minAmount + "-" + row.maxAmount};
+        this.$api.setSStorage("productRink", d);
+        this.$router.push(link);
+      },
+      resetAmountInfo() {
+        this.$store.commit("GET_AMOUNT_ROW", {eventMarketId: this.activityId});
+        this.$store.commit("GET_AMOUNT_DETAIL", {formData: [], id: "", jumpList: "0", maxAmount: "", minAmount: ""});
+      },
+      addAmount() {
+        this.resetAmountInfo();
+        this.$router.push("/activityList/setAmount/amount/add");
+      },
+      editAmount(data) {
+        this.resetAmountInfo();
+        this.$store.commit("GET_AMOUNT_ROW", data);
+        this.$router.push("/activityList/setAmount/amount/edit");
+      },
+      handleSizeChange(val) {
+        this.pageIndex = 1;
+        this.pageSize = val;
+        this.getAmountList();
+      },
+      handleCurrentChange(val) {
+        this.pageIndex = val;
+        this.getAmountList();
+      },
+      getAmountList() {
+        let param = {
+          param: {
+            eventMarketId: this.activityId,
+            pageIndex: this.pageIndex,
+            pageSize: this.pageSize
+          }
+        };
+        this.$api.vkcPost(
+          "supermarketloan/mgr/eventmarket/getAmountList",
+          param,
+          res => {
+            this.amountList = res.data;
+            this.totalCount = res.totalCount;
+            let phoneObj = {dataId: "-1", dataName: "手机号"};
+            let authCodeObj = {dataId: "-2", dataName: "验证码"};
+            for (let i = 0; i < this.amountList.length; i++) {
+              let amount = this.amountList[i];
+              amount.metaDesc.unshift(authCodeObj);
+              amount.metaDesc.unshift(phoneObj);
+            }
+          },
+          "all"
+        );
+      },
+      setAmountStatus(amount) {
+        let amountStatus = amount.onlineState;
+        let toBeState = amountStatus == "0" ? "1" : "0";
+        let param = {
+          param: {
+            eventMarketId: this.activityId,
+            minAmount: amount.minAmount + "",
+            maxAmount: amount.maxAmount,
+            onlineState: toBeState
+          }
+        };
+        this.$api.vkcPost("supermarketloan/mgr/eventmarket/changeAmountStatus", param, res => {
+          amount.onlineState = toBeState;
+          this.$message({
+            message: "操作成功",
+            type: "success"
+          });
+        });
+      },
+      confirmDisabledAmount(amount) {
+        let currentState = amount.onlineState;
+        let keyMsg = currentState == "0" ? "禁用" : "启用";
+        let hintMsg = "确定要" + keyMsg + "该金额范围吗？";
+        this.$confirm(hintMsg, "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning"
+        })
+          .then(() => {
+            this.setAmountStatus(amount);
+          })
+          .catch(() => {
+          });
+      }
+    },
+    created() {
+      let d = this.$api.getSStorage("actListRow");
+      if (!d) {
+        this.$router.back();
+        return;
+      }
+      this.activityId = d.id;
+      this.$store.commit("CHANGE_TITLE", ["当前选择活动", d.name]);
+      this.getAmountList();
+    }
+  };
+</script>

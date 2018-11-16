@@ -1,0 +1,57 @@
+<template>
+    <div>
+        <ul class="flex space-around align-middle col-7 common-font">
+            <li>用户号码：<span>{{userPhone.phone}}</span></li>
+            <li>
+                <!--<el-button type="primary" :disabled="userPhone.disabled">一键拨打</el-button>-->
+                <jb-phoneBtn class="col-6 relative" ref="phoneBtn" :phoneData="phoneData"></jb-phoneBtn>
+            </li>
+        </ul>
+        <ul class="flex align-middle col-5 common-font">
+            <p class="pd-l20">认领线索即可拥有{{userPhone.callTimes}}次拨打次数</p>
+        </ul>
+    </div>
+</template>
+
+<script>
+  import { mapGetters} from "vuex";
+    export default {
+        props: {
+            userPhone:Object
+        },
+        data() {
+            return {
+            };
+        },
+        computed:{
+          ...mapGetters(["workListRow", "workListDetail", "workListFormData"]),
+            phoneData() {
+                return {
+                    phone: this.userPhone.phoneHidden,
+                    userType: this.workListDetail.userType,
+                    taskId: this.workListRow.taskId,
+                    customerServiceOrderId: this.workListRow.orderId || this.workListRow.id
+                };
+            }
+        },
+        methods: {
+
+        },
+        created() {
+        }
+    };
+</script>
+<style scoped>
+    ul {
+        height: 120px;
+
+    }
+
+    ul:first-child {
+        border-right: 1px solid #cccccc;
+    }
+
+    ul li {
+        display: inline-block;
+    }
+</style>

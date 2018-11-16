@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>管理系统</title>
+    <link rel="stylesheet" href="static/css/base.min.css">
+    <script src="static/js/jquery-1.11.1.min.js"></script>
+    <script src="static/js/JunboJsUI.min.js"></script>
+</head>
+
+<body onunload="Phone.OffLine()">
+    <div id="app"></div>
+    <object id=VaxEmbedCAB codeBase="VaxSIPUserAgentCAB.cab#version=7,0,6,4" height=0 width=0 classid="clsid:3D3BF1F8-9696-4A5E-B4F1-49101C997B70">
+        <embed id="VaxEmbedPlugIn" type="application/x-mozilla-vaxsipuseragent-plugin" width=0 height=0>
+    </object>
+    <script src="static/js/phone.min.js"></script>
+    <!-- 软电话各种事件(注册、下线、来电、呼叫等) -->
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnTryingToRegister()">
+        OnTryingToRegister();
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnSuccessToRegister()">
+        OnSuccessToRegister();
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnFailToRegister()">
+        OnFailToRegister();
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnFailToRegisterEx(StatusCode, ReasonPhrase)">
+        OnFailToRegisterEx(StatusCode, ReasonPhrase);
+    </script>
+
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnTryingToReRegister()">
+        OnTryingToReRegister();
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnSuccessToReRegister()">
+        OnSuccessToReRegister();
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnFailToReRegister()">
+        OnFailToReRegister();
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnFailToReRegisterEx(StatusCode, ReasonPhrase)">
+        OnFailToReRegisterEx(StatusCode, ReasonPhrase);
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnTryingToUnRegister()">
+        OnTryingToUnRegister();
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnSuccessToUnRegister()">
+        OnSuccessToUnRegister();
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnFailToUnRegister()">
+        OnFailToUnRegister();
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnIncomingDiagnostic(MsgSIP, FromIP, FromPort)">
+        OnIncomingDiagnostic(MsgSIP, FromIP, FromPort);
+    </script>
+
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnOutgoingDiagnostic(MsgSIP, ToIP, ToPort)">
+        OnOutgoingDiagnostic(MsgSIP, ToIP, ToPort);
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnFailToConnect(LineNo)">
+        OnFailToConnect(LineNo);
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnConnecting(LineNo)">
+        OnConnecting(LineNo);
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnSuccessToConnect(LineNo, ToRTPIP, ToRTPPort)">
+        OnSuccessToConnect(LineNo, ToRTPIP, ToRTPPort);
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnDisconnectCall(LineNo)">
+        OnDisconnectCall(LineNo);
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnProvisionalResponse(LineNo, StatusCode, ReasonPhrase)">
+        OnProvisionalResponse(LineNo, StatusCode, ReasonPhrase);
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnServerFailureResponse(LineNo, StatusCode, ReasonPhrase)">
+        OnServerFailureResponse(LineNo, StatusCode, ReasonPhrase);
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnGeneralFailureResponse(LineNo, StatusCode, ReasonPhrase)">
+        OnGeneralFailureResponse(LineNo, StatusCode, ReasonPhrase);
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnRequestFailureResponse(LineNo, StatusCode, ReasonPhrase)">
+        OnRequestFailureResponse(LineNo, StatusCode, ReasonPhrase);
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnMsgNOTIFY(Msg)">
+        OnMsgNOTIFY(Msg);
+    </script>
+
+    <script language=javascript FOR="VaxEmbedCAB" EVENT="OnConnecting(LineNo)">
+        OnConnecting(LineNo);
+    </script>
+
+</body>
+
+</html>

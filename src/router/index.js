@@ -1,0 +1,258 @@
+import Vue from "vue";
+import Router from "vue-router";
+
+Vue.use(Router);
+
+export default new Router({
+    routes: [{
+            path: "/",
+            redirect: "/login"
+        },
+        {
+            path: "/login",
+            component: resolve => require(["../components/common/Login.vue"], resolve)
+        },
+        {
+            path: "/home",
+            component: resolve => require(["../components/common/Home.vue"], resolve),
+            children: [{
+                    path: "/changeInfo",
+                    component: resolve => require(["../components/common/changeInfo"], resolve)
+                },
+                {
+                    path: "/",
+                    component: resolve => require(["../components/pages/home"], resolve),
+                    children: [{
+                            path: "/",
+                            component: resolve => require(["../components/pages/home/home"], resolve)
+                        }, {
+                            path: "/homeFinancialLoan",
+                            component: resolve => require(["../components/pages/home/financialLoan"], resolve)
+                        },
+                        {
+                            path: "/homeWeddingPhoto",
+                            component: resolve => require(["../components/pages/home/weddingPhoto"], resolve)
+                        }
+                    ]
+                },
+                {
+                    path: "/ad",
+                    component: resolve => require(["../components/pages/ad"], resolve)
+                },
+                {
+                    /*path: "/applyRecord",
+                    component: resolve => require(["../components/pages/applyRecord"], resolve)*/
+                    path: "/financialLoan",
+                    component: resolve => require(["../components/pages/applyRecord"], resolve),
+                    children: [{
+                            path: "/",
+                            component: resolve => require(["../components/pages/applyRecord/financialLoan"], resolve)
+                        },
+                        {
+                            path: "/weddingPhoto",
+                            component: resolve => require(["../components/pages/applyRecord/weddingPhoto"], resolve)
+                        }
+                    ]
+                },
+                {
+                    path: "/submitCustomer",
+                    component: resolve => require(["../components/pages/submit"], resolve),
+                    children: [{
+                            path: "/",
+                            component: resolve => require(["../components/pages/submit/customer"], resolve)
+                        },
+                        {
+                            path: "/submitCustomerService",
+                            component: resolve => require(["../components/pages/submit/customerService"], resolve)
+                        }
+                    ]
+                },
+                {
+                    path: "/recommend",
+                    component: resolve => require(["../components/pages/recommend"], resolve)
+                },
+                {
+                    path: "/product",
+                    component: resolve => require(["../components/pages/product"], resolve)
+                },
+                {
+                    path: "/message",
+                    component: resolve => require(["../components/pages/message"], resolve)
+                },
+                {
+                    path: "/suggest",
+                    component: resolve => require(["../components/pages/suggest"], resolve)
+                },
+                {
+                    path: "/activityList",
+                    component: resolve => require(["../components/pages/activity/activityList"], resolve),
+                    children: [{
+                            path: "/",
+                            component: resolve => require(["../components/pages/activity/activityList/actList"], resolve)
+                        },
+                        {
+                            path: "addActivity",
+                            component: resolve => require(["../components/pages/activity/activityList/activities/addActivity"], resolve)
+                        },
+                        {
+                            path: "editActivity",
+                            component: resolve => require(["../components/pages/activity/activityList/activities/editActivity"], resolve)
+                        },
+                        {
+                            path: "channel",
+                            component: resolve => require(["../components/pages/activity/activityList/channel"], resolve),
+                            children: [{
+                                    path: "/",
+                                    component: resolve => require(["../components/pages/activity/activityList/channel/channelList"], resolve)
+                                },
+                                {
+                                    path: "setChannel/:state",
+                                    component: resolve => require(["../components/pages/activity/activityList/channel/channel"], resolve)
+                                },
+                                {
+                                    path: "secondChannel",
+                                    component: resolve => require(["../components/pages/activity/activityList/channel/secondChannel"], resolve)
+                                }
+                            ]
+                        },
+                        {
+                            path: "ranking",
+                            component: resolve => require(["../components/pages/activity/activityList/ranking"], resolve),
+                            children: [{
+                                    path: "/",
+                                    component: resolve => require(["../components/pages/activity/activityList/ranking/rankList"], resolve)
+                                },
+                                {
+                                    path: "rankDetail",
+                                    component: resolve => require(["../components/pages/activity/activityList/ranking/rankDetail"], resolve)
+                                },
+                                {
+                                    path: "rankEdit",
+                                    component: resolve => require(["../components/pages/activity/activityList/ranking/rankEdit"], resolve)
+                                }
+                            ]
+                        },
+                        {
+                            path: "setAmount",
+                            component: resolve => require(["../components/pages/activity/activityList/setAmount"], resolve),
+                            children: [{
+                                    path: "/",
+                                    component: resolve => require(["../components/pages/activity/activityList/setAmount/amountList"], resolve)
+                                },
+                                {
+                                    path: "productRink",
+                                    component: resolve => require(["../components/pages/activity/activityList/setAmount/productRink"], resolve)
+                                },
+                                {
+                                    path: "amount/:state",
+                                    component: resolve => require(["../components/pages/activity/activityList/setAmount/amount"], resolve)
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    path: "/activityForm",
+                    component: resolve => require(["../components/pages/activity/activityForm"], resolve)
+                },
+                {
+                    path: "/activityRecord",
+                    component: resolve => require(["../components/pages/activity/record"], resolve)
+                },
+                {
+                    path: "/user",
+                    component: resolve => require(["../components/pages/user"], resolve)
+                },
+                {
+                    path: "/order",
+                    component: resolve => require(["../components/pages/order"], resolve)
+                },
+                {
+                    path: "/business",
+                    component: resolve => require(["../components/pages/business"], resolve)
+                },
+                {
+                    path: "/customer",
+                    component: resolve => require(["../components/pages/customer"], resolve)
+                },
+                {
+                    path: "/rules",
+                    component: resolve => require(["../components/pages/rules"], resolve)
+                },
+                {
+                    path: "/soundRecord",
+                    component: resolve => require(["../components/pages/soundRecord"], resolve)
+                },
+                {
+                    path: "/smsList",
+                    component: resolve => require(["../components/pages/sms"], resolve),
+                    children: [{
+                            path: "/",
+                            component: resolve => require(["../components/pages/sms/smsList"], resolve)
+                        },
+                        {
+                            path: "setsms",
+                            component: resolve => require(["../components/pages/sms/smsList/setsms"], resolve)
+                        },
+                        {
+                            path: "/smsTemplate",
+                            component: resolve => require(["../components/pages/sms/smsTemplate"], resolve)
+                        }
+                    ]
+                },
+                {
+                    path: "/role",
+                    component: resolve => require(["../components/pages/rights"], resolve),
+                    children: [{
+                            path: "/",
+                            component: resolve => require(["../components/pages/rights/role"], resolve)
+                        },
+                        {
+                            path: "/account",
+                            component: resolve => require(["../components/pages/rights/account"], resolve)
+                        },
+                        {
+                            path: "/customerAccount",
+                            component: resolve => require(["../components/pages/rights/customerAccount"], resolve)
+                        }
+                    ]
+
+                },
+                {
+                    path: "/clue",
+                    component: resolve => require(["../components/pages/clue"], resolve),
+                    children: [{
+                            path: "/",
+                            component: resolve => require(["../components/pages/clue/clueList"], resolve)
+                        },
+                        {
+                            path: "/myClue",
+                            component: resolve => require(["../components/pages/clue/myClue"], resolve)
+                        }
+                    ]
+
+                },
+                {
+                    path: "/customerServiceManagement",
+                    component: resolve => require(["../components/pages/customerService"], resolve)
+                },
+                {
+                    path: "/smsRecord",
+                    component: resolve => require(["../components/pages/smsRecord"], resolve)
+                },
+                {
+                    path: "/workList",
+                    component: resolve => require(["../components/pages/workList"], resolve)
+                },
+                {
+                    path: "/workHandle",
+                    component: resolve => require(["../components/pages/workHandle"], resolve)
+                }
+            ]
+        },
+        {
+            path: "*",
+            component: resolve => require(["../components/common/404.vue"], resolve)
+        }
+    ]
+});

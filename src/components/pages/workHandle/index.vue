@@ -1,0 +1,155 @@
+<template>
+  <div>
+    <jb-breadcrumb @handleBack="handleBack" :hideBack="showPage==='workListManage'">当前位置：工单处理 {{breadcrumb}}
+    </jb-breadcrumb>
+    <div v-show="showPage==='workListManage'">
+      <el-form :inline="true" :model="formData" size="small" class="demo-form-inline">
+        <el-form-item label="起止时间：">
+          <el-date-picker v-model="startAndEndTime" type="daterange" start-placeholder="开始日期" end-placeholder="结束日期"
+                          value-format="yyyy-MM-dd" @change="getDate" size="small"></el-date-picker>
+        </el-form-item>
+
+        <el-form-item label="业务类型：">
+          <jb-businessTypes v-model="formData.businessTypeId" :show="true"></jb-businessTypes>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button type="primary" @click="getWorkListManage(1)">查询</el-button>
+        </el-form-item>
+      </el-form>
+      <div style="margin-bottom:20px">
+        <el-table :data="tableData" stripe tooltip-effect='light' border>
+          <el-table-column type="index" width="50" :index="$api.IndexMethod(formData.pageIndex,formData.pageSize)"
+                           label="序号"></el-table-column>
+          <el-table-column prop="createDate" label="提交时间" align='center'></el-table-column>
+          <el-table-column prop="taskId" label="任务编号" align='center'></el-table-column>
+          <el-table-column prop="jobDescription" label="任务说明" align='center'
+                           :show-overflow-tooltip='true'></el-table-column>
+          <el-table-column prop="businessName" label="业务类型" align='center'></el-table-column>
+          <el-table-column prop="submitNum" label="提交数量" align='center'></el-table-column>
+          <el-table-column prop="notDealJobNum" label="待处理" align='center'></el-table-column>
+          <el-table-column label="操作" align='center'>
+            <template slot-scope="scope">
+              <el-button type="text" @click="workList(scope.row)">查看提交列表</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div class="mg15 mg-r0 pull-right" v-show="formData.totalCount>0">
+        <jb-pagination @getList="getWorkListManage" :pageIndex="formData.pageIndex" :pageSize="formData.pageSize"
+                       :totalCount="formData.totalCount"></jb-pagination>
+      </div>
+    </div>
+    <v-workList v-if="showPage==='workList'" ref="workList" :row="selectRow" @viewDetail="viewDetail"></v-workList>
+    <jb-workListDetail v-if="showPage==='workListDetail'" ref="workListDetail"></jb-workListDetail>
+  </div>
+</template>
+
+<script>
+  import workList from "./workList.vue";
+
+  export default {
+    components: {
+      "v-workList": workList
+    },
+    data() {
+      return {
+        selectRow: {}, //选中的行
+        showPage: "workListManage",
+        startAndEndTime: "",
+        tableData: [],
+        formData: {
+          startTime: "",
+          endTime: "",
+          businessTypeId: "",
+          pageIndex: 1,
+          pageSize: 10,
+          totalCount: 0
+        }
+      };
+    },
+    computed: {
+      breadcrumb() {
+        switch (this.showPage) {
+          case "workListManage":
+            return "";
+          case "workList":
+            return "> 工单列表";
+          case "workListDetail":
+            return "> 工单列表 > 工单详情";
+          default:
+            break;
+        }
+      }
+    },
+    methods: {
+      handleBack() {
+        if (this.showPage === "workList") this.showPage = "workListManage";
+        if (this.showPage === "workListDetail") {
+          this.showPage = "workList";
+          this.workList();
+        }
+      },
+      getDate(val) {
+        if (val) {
+          this.formData.startTime = val[0];
+          this.formData.endTime = val[1];
+          return;
+        }
+        this.formData.startTime = "";
+        this.formData.endTime = "";
+      },
+      workList(row) {
+        if(row) {
+          this.selectRow = row;
+        }
+        this.showPage = "workList";
+      },
+      viewDetail(row, call) {
+        this.$store.commit("GET_WORKLIST_ROW", row);
+        this.$store.commit("GET_WORKLIST_FORM_DATA", this.$refs.workList.formData);
+        this.showPage = "workListDetail";
+       /* this.$refs.workListDetail
+          .getAllDetail()
+          .then(res => {
+            this.showPage = "workListDetail";
+            setTimeout(() => {
+              if (call) this.$refs.workListDetail.$refs.phoneBtn.handleClick();
+            }, 200);
+          })
+          .catch(() => {
+            this.$alert("系统繁忙，请稍后重试！");
+          });*/
+       setTimeout(()=>{
+         this.$refs.workListDetail
+           .getAllDetail()
+           .then(res => {
+             this.showPage = "workListDetail";
+             setTimeout(() => {
+               if (call) this.$refs.workListDetail.$refs.phoneBtn.handleClick();
+             }, 200);
+           })
+           .catch(() => {
+             this.$alert("系统繁忙，请稍后重试！");
+           });
+       },300);
+      },
+      getWorkListManage(index, size) {
+        if (index) this.formData.pageIndex = index;
+        if (size) this.formData.pageSize = size;
+        this.$api.vkcPost2(
+          "supermarketloan/crm/customerservice/custser/taskPage",
+          this.formData,
+          res => {
+            this.formData.totalCount = res.totalCount;
+            this.tableData = res.data;
+          },
+          "getAllData"
+        );
+      }
+    },
+    created() {
+      this.getWorkListManage();
+    }
+  };
+</script>

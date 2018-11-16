@@ -1,0 +1,54 @@
+<template>
+  <el-select v-model="model" placeholder="请选择" class="width200" clearable filterable>
+    <el-option :label="firstLabel" :value="value" v-if="show"></el-option>
+    <el-option v-for="item in businessTypeList" :key="item.id" :label="item.businessName" :value="item.id"></el-option>
+  </el-select>
+</template>
+
+<script>
+  /*
+  业务类型组件
+  props{
+      value: 绑定的值
+      firstLabel: 第一项名称  选中值value为空
+  }
+
+  使用例子：    <jb-businessTypes v-model="businessTypeId"></jb-businessTypes>
+  */
+  import {mapGetters, mapActions} from "vuex";
+
+  export default {
+    name: "jb-businessTypes",
+    props: {
+      value: {
+        type: String,
+        default: ""
+      },
+      firstLabel: {
+        type: String,
+        default: "全部"
+      },
+      show:{//是否有全部这个选项
+        type:Boolean,
+        default:false
+      }
+    },
+    computed: {
+      model: {
+        get() {
+          return this.value;
+        },
+        set(val) {
+          this.$emit("input", val);
+        }
+      },
+      ...mapGetters(["businessTypeList"])
+    },
+    methods: {
+      ...mapActions(["getBusinessTypeList"])
+    },
+    created() {
+      this.getBusinessTypeList();
+    }
+  };
+</script>

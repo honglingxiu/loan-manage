@@ -1,0 +1,176 @@
+<template>
+	<div>
+		<el-form :model="formNews" ref="formNews" label-position="left" label-width="100px" :rules="rules">
+			<el-form-item label="消息标题：" prop="newTitle">
+				<el-input v-model="formNews.newTitle" placeholder="请输入内容" @change="getMsgTitle"></el-input>
+			</el-form-item>
+			<el-form-item label="消息内容：" prop="newContent">
+				<el-input type="textarea" :autosize="{ minRows: 7, maxRows: 4}" placeholder="请输入内容" v-model="formNews.newContent" @change="getMsgContent"></el-input>
+			</el-form-item>
+			<el-form-item label="定时发送：" prop="openRadio">
+				<el-radio-group v-model="formNews.openRadio" @change="getRadio">
+					<el-radio class="radio" :label="1">开启</el-radio>
+					<el-radio class="radio" :label="0">关闭</el-radio>
+				</el-radio-group>
+			</el-form-item>
+			<el-form-item v-show="formNews.openRadio=='1'" prop="dateTime">
+				本消息将于
+				<el-date-picker v-model="formNews.dateTime" type="datetime" placeholder="选择日期时间" value-format="yyyy-MM-dd HH:mm:ss" :picker-options="pickerBeginDateAfter" @change="changeTime">
+				</el-date-picker> 发送
+			</el-form-item>
+		</el-form>
+		<div class="mg15 text-center">
+			<el-button @click="cancel">取消</el-button>
+			<el-button type="primary" @click="confirm('formNews')">确定</el-button>
+		</div>
+	</div>
+</template>
+
+<script>
+export default {
+    data() {
+        return {
+            formNews: {
+                newTitle: "",
+                newContent: "",
+                dateTime: "",
+                openRadio: 1
+            },
+            isSelectedTimeValid: false, //判断所选时间是否合理的标识
+            rules: {
+                newTitle: [{ required: true, message: "请输入活动名称", trigger: "blur" }, { min: 1, max: 20, message: "长度在 1 到 20 个字符", trigger: "blur" }],
+                newContent: [{ required: true, message: "请填消息内容", trigger: "blur" }]
+            },
+            pickerBeginDateAfter: {
+                disabledDate(time) {
+                    // console.log("传递的参数："+time.getTime());
+                    return time.getTime() < Date.now() - 79200000;
+                }
+            }
+        };
+    },
+    methods: {
+        judgeDataIsNull(data) {
+            //判断数据是否为空，空字符串或空对象都返回true，否则返回false，即数据不为空
+            if (data == undefined || data == null || data == "" || JSON.stringify(data) == "{}") {
+                return true;
+            } else {
+                return false;
+            }
+        },
+        getMsgTitle(title) {
+            this.formNews.newTitle = title;
+        },
+        getMsgContent(content) {
+            this.formNews.newContent = content;
+        },
+        getRadio(checkedRadio) {
+            this.formNews.openRadio = checkedRadio;
+        },
+        changeTime: function(selectTime) {
+            if (selectTime == null || selectTime == "") {
+                this.isSelectedTimeValid = false;
+                return;
+            }
+            let _this = this;
+            let now = new Date();
+
+            let nowTime = now.getTime();
+            console.log("1971距离现在的毫秒数：" + nowTime);
+
+            let datePattern = /\d{4}-{1}\d{2}-{1}\d{2}/g;
+            let date = datePattern.exec(selectTime);
+            date = date.toString();
+            let dateArr = date.split("-");
+            console.log("匹配的日期：" + dateArr);
+            let selectedYear = dateArr[0];
+            let selectedMonth = dateArr[1];
+            let selectedDay = dateArr[2];
+
+            let timePattern = /\d{2}:\d{2}:\d{2}/g;
+            let time = timePattern.exec(selectTime);
+            time = time.toString();
+            let timeArr = time.split(":");
+            console.log("匹配到的时间：" + time + ",timeArr:" + timeArr);
+            let selectedHour = timeArr[0];
+            let selectedMinute = timeArr[1];
+            let selectedSecond = timeArr[2];
+            let selectedFormatTime = new Date(selectedYear, selectedMonth - 1, selectedDay, selectedHour, selectedMinute, selectedSecond);
+
+            console.log("选中的时间毫秒数：" + selectedFormatTime.getTime());
+            let selectedTime = selectedFormatTime.getTime();
+
+            if (selectedTime - nowTime < 113460) {
+                this.$message.error("您选择的时间距离现在太近！");
+                this.isSelectedTimeValid = false;
+                return;
+            } else {
+                this.isSelectedTimeValid = true;
+                this.formNews.dateTime = selectTime.toString();
+            }
+
+            console.log("当前时间为：" + now.getHours() + "，选中的时间：" + selectTime);
+        },
+        cancel() {
+            this.$refs["formNews"].resetFields();
+            this.$emit("close");
+        },
+        confirm(formName) {
+            let _this = this;
+            _this.$refs[formName].validate(valid => {
+                if (valid) {
+                    // alert('submit!');
+                    let sendTime = _this.formNews.dateTime;
+                    console.log("发送时间为：" + sendTime);
+                    let isOpenDelayedSend = _this.formNews.openRadio;
+                    if (isOpenDelayedSend == 1) {
+                        console.log("开启定时发送");
+                        let delaySendTime = _this.formNews.dateTime;
+                        if (delaySendTime == "" || _this.isSelectedTimeValid == false) {
+                            this.$message.error("请选择合理的发送时间！");
+                            return;
+                        }
+                    } else {
+                        sendTime = "";
+                    }
+                    let param = {
+                        param: {
+                            id: "",
+                            title: _this.formNews.newTitle,
+                            content: _this.formNews.newContent,
+                            time: sendTime + "",
+                            saveOrUpdate: "0",
+                            isTiming: isOpenDelayedSend + ""
+                        }
+                    };
+                    _this.$api.vkcPost(
+                        "supermarketloan/mgr/saveOrUpdateMessageInfo",
+                        param,
+                        res => {
+                            if (!_this.judgeDataIsNull(res)) {
+                                if (res.code == "0" || res.code == 0) {
+                                    this.$message({
+                                        message: res.msg,
+                                        type: "success"
+                                    });
+                                    _this.$emit("addSuccess");
+                                    _this.cancel();
+                                    // setTimeout(function(){
+                                    // },20);
+                                } else {
+                                    this.$message.error(res.msg);
+                                }
+                            }
+                        },
+                        "all"
+                    );
+                } else {
+                    // console.log('error submit!!');
+                    this.$message.error("请输入相关数据！");
+                    return false;
+                }
+            });
+        }
+    }
+};
+</script>

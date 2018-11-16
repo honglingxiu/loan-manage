@@ -1,0 +1,219 @@
+<template>
+  <div>
+    <el-form :model="formData" :inline="true">
+      <el-form-item label="工单生成时间：">
+        <el-date-picker v-model="formData.createTime" type="daterange" start-placeholder="开始日期" end-placeholder="结束日期"
+                        value-format="yyyy-MM-dd" @change="handleCreateTime"></el-date-picker>
+      </el-form-item>
+      <el-form-item label="工单id：">
+        <el-input v-model="formData.customerServiceOrderId" placeholder="请输入工单id" class="width200"></el-input>
+      </el-form-item>
+      <el-form-item label="客户号码：">
+        <el-input v-model="formData.phone" placeholder="请输入客户号码" class="width200"></el-input>
+      </el-form-item>
+      <el-form-item label="工单处理时间：">
+        <el-date-picker v-model="formData.dealTime" type="daterange" start-placeholder="开始日期" end-placeholder="结束日期"
+                        value-format="yyyy-MM-dd" @change="handleDealTime"></el-date-picker>
+      </el-form-item>
+      <el-form-item label="操作客服：">
+        <jb-customerService v-model="formData.noteName"></jb-customerService>
+      </el-form-item>
+      <el-form-item label="处理结果：">
+        <el-select v-model="formData.dealResult" placeholder="请选择" class="width200">
+          <el-option label="全部" value=""></el-option>
+          <el-option label="通过" value="1"></el-option>
+          <el-option label="不通过" value="2"></el-option>
+          <el-option label="无效录音" value="3"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="录音时间：">
+        <el-date-picker v-model="formData.soundTime" type="daterange" start-placeholder="开始日期" end-placeholder="结束日期"
+                        value-format="yyyy-MM-dd" @change="handleSoundTime"></el-date-picker>
+      </el-form-item>
+      <el-form-item label="查询规则：">
+        <el-checkbox v-model="formData.userRandom" class="mg-r20">随机</el-checkbox>
+      </el-form-item>
+      <el-form-item label="抽样比例：">
+        <el-input v-model="formData.soundrandomNum" @blur="checkAmount('soundrandomNum')" placeholder="抽样比例"
+                  class="width100"></el-input>
+        %
+      </el-form-item>
+      <el-form-item label="录音时长：">
+        <el-input type="number" min="0" @blur="checkAmount('data4')" v-model="soundLengthStart"
+                  class="width100"></el-input>
+        <el-select v-model="soundStartUnit" placeholder="请选择" class="width100">
+          <el-option label="s" value="s"></el-option>
+          <el-option label="m" value="m"></el-option>
+          <el-option label="h" value="h"></el-option>
+        </el-select>
+        ——
+        <el-input type="number" min="0" @blur="checkAmount('data6')" v-model="soundLengthEnd"
+                  class="width100"></el-input>
+        <el-select v-model="soundEndUnit" placeholder="请选择" class="width100">
+          <el-option label="s" value="s"></el-option>
+          <el-option label="m" value="m"></el-option>
+          <el-option label="h" value="h"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="分值：">
+        <el-input type="number" min="0" @blur="checkAmount('scoreStart')" v-model="formData.scoreStart"
+                  class="width100"></el-input>
+        ——
+        <el-input type="number" min="0" @blur="checkAmount('scoreEnd')" v-model="formData.scoreEnd"
+                  class="width100"></el-input>
+      </el-form-item>
+
+      <el-form-item>
+        <el-button type="primary" @click="getSoundList(1)">查询</el-button>
+        <el-button type="primary" @click="clearFormData()">清空</el-button>
+      </el-form-item>
+    </el-form>
+
+    <el-table :data="tableData" stripe border>
+      <el-table-column type="index" width="50" :index="$api.IndexMethod(formData.pageIndex,formData.pageSize)"
+                       label="序号"></el-table-column>
+      <el-table-column prop="serviceStartDate" label="服务开始时间"></el-table-column>
+      <el-table-column prop="noteName" label="操作客服"></el-table-column>
+      <el-table-column prop="phone" label="客户号码"></el-table-column>
+      <el-table-column prop="dealResult" label="处理结果">
+        <template slot-scope="scope">
+          <span v-if="scope.row.dealResult==='0'">未处理</span>
+          <span v-else-if="scope.row.dealResult==='1'">通过</span>
+          <span v-else-if="scope.row.dealResult==='2'">不通过</span>
+          <span v-else>无效录音</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="score" label="质检评分"></el-table-column>
+      <el-table-column prop="qualityControlDate" label="质检时间"></el-table-column>
+      <el-table-column label="操作">
+        <template slot-scope="scope">
+          <el-button type="text" @click="$emit('viewDetail',scope.row)">详情</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <div class="text-right mg-t20">
+      <jb-pagination @getList="getSoundList" :totalCount="totalCount"></jb-pagination>
+    </div>
+
+  </div>
+</template>
+<script>
+  export default {
+    data() {
+      return {
+        totalCount: 0,
+        servicerList: [],
+        soundLengthStart: "",
+        soundLengthEnd: "",
+        soundStartUnit: "s",
+        soundEndUnit: "s",
+        formData: {
+          createTime: "", //工单生成时间
+          dealTime: "", //工单处理时间
+          soundTime: "", //录音时间
+          orderStartTime:"",//工单生成开始时间
+          orderEndTime: "", //工单生成结束时间
+          orderDealStartTime: "", //工单处理开始时间
+          orderDealEndTime:  "", //工单处理结束时间
+          soundDateStart: "", //录音时间开始时间
+          soundDateEnd: "", //录音时间结束时间
+          customerServiceOrderId: "",
+          phone: "",
+          soundrandomNum: "",
+          scoreStart: "",
+          scoreEnd: "",
+          servicer: "",
+          soundTimeLengthStart: "",
+          soundTimeLengthEnd: "",
+          noteName: "",
+          dealResult: "",
+          userRandom: false,
+          pageIndex: 1,
+          pageSize: 10
+        },
+        tableData: []
+      };
+    },
+    methods: {
+      checkAmount(key) {
+        if (this.formData[key] === "" || this.formData[key] >= 0) return;
+        this.formData[key] = "0";
+      },
+      getSoundLength(value, unit, key) {
+        if (!value) return;
+        switch (unit) {
+          case "s":
+            this.formData[key] = Math.round(value);
+            break;
+          case "m":
+            this.formData[key] = Math.round(parseFloat(value) * 60);
+            break;
+          case "h":
+            this.formData[key] = Math.round(parseFloat(value) * 60 * 60);
+            break;
+          default:
+            break;
+        }
+      },
+     /* getDate() {
+        let allTime = {
+          orderStartTime: this.formData.createTime[0] || "", //工单生成开始时间
+          orderEndTime: this.formData.createTime[1] || "", //工单生成结束时间
+          orderDealStartTime: this.formData.dealTime[0] || "", //工单处理开始时间
+          orderDealEndTime: this.formData.dealTime[1] || "", //工单处理结束时间
+          soundDateStart: this.formData.soundTime[0] || "", //录音时间开始时间
+          soundDateEnd: this.formData.soundTime[1] || "" //录音时间结束时间
+        };
+        return allTime;
+      },*/
+      getSoundList(index, size) {
+        if (index) this.formData.pageIndex = index;
+        if (size) this.formData.pageSize = size;
+       // let formatTime = this.getDate();
+       // Object.assign(this.formData, formatTime);
+        this.getSoundLength(this.soundLengthStart, this.soundStartUnit, "soundTimeLengthStart");
+        this.getSoundLength(this.soundLengthEnd, this.soundEndUnit, "soundTimeLengthEnd");
+        this.$api.vkcPost2(
+          "supermarketloan/crm/sound/pageSound",
+          this.formData,
+          res => {
+            this.totalCount = res.totalCount;
+            this.tableData = res.data;
+          },
+          "getAllData"
+        );
+      },
+      clearFormData() {
+        Object.assign(this.formData, this.$options.data().formData);
+      },
+      handleCreateTime(dateArr) {
+        if (!dateArr) {
+          this.formData.orderStartTime = this.formData.orderEndTime="";
+        } else {
+          this.formData.orderStartTime = dateArr[0];//工单生成开始时间
+          this.formData.orderEndTime = dateArr[1];//工单生成结束时间
+        }
+      },
+      handleDealTime(dateArr) {
+        if (!dateArr) {
+          this.formData.orderDealStartTime = this.formData.orderDealEndTime="";
+        } else {
+          this.formData.orderDealStartTime = dateArr[0];
+          this.formData.orderDealEndTime = dateArr[1] ;
+        }
+      },
+      handleSoundTime(dateArr) {
+        if (!dateArr) {
+          this.formData.soundDateStart = this.formData.soundDateEnd="";
+        } else {
+          this.formData.soundDateStart = dateArr[0];
+          this.formData.soundDateEnd = dateArr[0];
+        }
+      }
+    },
+    created() {
+      this.getSoundList();
+    }
+  };
+</script>

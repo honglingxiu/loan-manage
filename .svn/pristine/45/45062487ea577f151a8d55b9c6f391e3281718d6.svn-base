@@ -1,0 +1,61 @@
+<template>
+    <el-tabs type="border-card">
+        <el-tab-pane label="处理信息">
+            <ul class="row clearfix mg20" v-if="workListDetail.metaDataInfo.length>0">
+                <li class="col-6 lh50 mg-b10" v-for="item in workListDetail.metaDataInfo" :key="item.metaId">
+                    <!-- 输入 -->
+                    <div v-if="item.controlType==='input'">
+                        <label class="col-4 text-right">{{item.metaDesc}}：</label>
+                        <div class="col-8">
+                            <el-input v-model="item.value" placeholder="请输入内容" class="width200"></el-input>
+                        </div>
+                    </div>
+                    <!-- 单选 -->
+                    <div v-if="item.controlType==='radio'">
+                        <label class="col-4 text-right">{{item.metaDesc}}：</label>
+                        <div class="col-8">
+                            <el-radio-group v-model="item.value">
+                                <el-radio :label="item" v-for="(item,key) in item.controlParamValue" :key="key"></el-radio>
+                            </el-radio-group>
+                        </div>
+                    </div>
+                    <!-- 下拉 -->
+                    <div v-if="item.controlType==='select'">
+                        <label class="col-4 text-right">{{item.metaDesc}}：</label>
+                        <div class="col-8">
+                            <el-select v-model="item.value" placeholder="请选择" class="width200">
+                                <el-option v-for="(item,key) in item.controlParamValue" :key="key" :label="item" :value="item"></el-option>
+                            </el-select>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+            <p v-else class="fs14 mg-b20">暂无处理信息</p>
+            <el-collapse>
+                <el-collapse-item title="用户详细资料">
+                    <fieldset class="fieldset">
+                        <legend class="legend">用户信息</legend>
+                        <div class="col-6 mg-t5 mg-b10" v-for="(item,key) in workListDetail.user" :key="key">{{key}}：{{item}}</div>
+                    </fieldset>
+                    <fieldset class="fieldset">
+                        <legend class="legend">征信信息</legend>
+                        <div class="col-6 mg-t5 mg-b10" v-for="(item,key) in workListDetail.credit" :key="key">{{key}}：{{item}}</div>
+                    </fieldset>
+                </el-collapse-item>
+            </el-collapse>
+        </el-tab-pane>
+    </el-tabs>
+</template>
+
+<script>
+import { mapGetters, mapActions } from "vuex";
+export default {
+    data() {
+        return {};
+    },
+    computed: {
+        ...mapGetters(["workListDetail"])
+    },
+    methods: {}
+};
+</script>

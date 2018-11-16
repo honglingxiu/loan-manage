@@ -1,0 +1,147 @@
+<template>
+    <div>
+        <fieldset class="fieldset">
+            <legend class="legend">用户信息</legend>
+            <div class="col-6 mg-t5 mg-b10">手机号：{{detailData.phone}}</div>
+            <div class="col-6 mg-t5 mg-b10">姓名：{{detailData.name}}</div>
+            <div class="col-6 mg-t5 mg-b10">身份证：{{detailData.idCard}}</div>
+            <div class="col-6 mg-t5 mg-b10">城市省份：{{detailData.cityProvince}}</div>
+            <div class="col-6 mg-t5 mg-b10">城市市区：{{detailData.cityDowntown}}</div>
+            <div class="col-6 mg-t5 mg-b10">出生年月日：{{detailData.birthDate}}</div>
+            <div class="col-6 mg-t5 mg-b10">申请来源：{{detailData.applysources}}</div>
+            <div class="col-6 mg-t5 mg-b10">性别：{{detailData.sex}}</div>
+            <div class="col-6 mg-t5 mg-b10">邮箱：{{detailData.mail}}</div>
+            <div class="col-6 mg-t5 mg-b10">年龄：{{detailData.age}}</div>
+            <div class="col-6 mg-t5 mg-b10">客户实际申请IP：{{detailData.ip}}</div>
+            <div class="col-6 mg-t5 mg-b10">工作所在地：{{detailData.locationWork}}</div>
+        </fieldset>
+
+        <fieldset class="fieldset">
+            <legend class="legend">征信信息</legend>
+            <div class="col-6 mg-t5 mg-b10">名下是否有车：{{detailData.automobileAssets}}</div>
+            <div class="col-6 mg-t5 mg-b10">名下房产类型：{{detailData.houseProperty}}</div>
+            <div class="col-6 mg-t5 mg-b10">工资形式：{{detailData.wageForm}}</div>
+            <div class="col-6 mg-t5 mg-b10">月收入（元）：{{detailData.monthlySalary}}</div>
+            <div class="col-6 mg-t5 mg-b10">职业身份：{{detailData.profession}}</div>
+            <div class="col-6 mg-t5 mg-b10">是否有本地社保：{{detailData.socialSecurity}}</div>
+            <div class="col-6 mg-t5 mg-b10">是否有寿险保单：{{detailData.lifeInsurance}}</div>
+            <div class="col-6 mg-t5 mg-b10">是否有信用卡：{{detailData.creditCard}}</div>
+            <div class="col-6 mg-t5 mg-b10">企业类型：{{detailData.enterpriseType}}</div>
+            <div class="col-6 mg-t5 mg-b10">单位工龄：{{detailData.companySeniority}}</div>
+            <div class="col-6 mg-t5 mg-b10">是否有本地公积金：{{detailData.accFund}}</div>
+            <div class="col-6 mg-t5 mg-b10">征信记录：{{detailData.creditRecord}}</div>
+            <div class="col-6 mg-t5 mg-b10">信用情况：{{detailData.creditStatus}}</div>
+            <div class="col-6 mg-t5 mg-b10">教育程度：{{detailData.educationLevel}}</div>
+            <div class="col-6 mg-t5 mg-b10">贷款用途：{{detailData.purpose}}</div>
+            <div class="col-6 mg-t5 mg-b10">工作（有/无）：{{detailData.job}}</div>
+            <div class="col-6 mg-t5 mg-b10">贷款额度：{{detailData.applyAmount}}</div> 
+            <div class="col-6 mg-t5 mg-b10">银行代发（是/否）：{{detailData.bankTransfer}}</div>
+            <div class="col-6 mg-t5 mg-b10">贷款期限：{{detailData.applyDeadline}}</div>
+            <div class="col-6 mg-t5 mg-b10">名下是否有房：{{detailData.haveHouseProperty}}</div>
+            <div class="col-6 mg-t5 mg-b10">抵押情况（房产）：{{detailData.houseMortgageStatus}}</div>
+            <div class="col-6 mg-t5 mg-b10">房龄：{{detailData.houseAge}}</div>
+            <div class="col-6 mg-t5 mg-b10">估值（房产）：{{detailData.houseValuation}}</div>
+            <div class="col-6 mg-t5 mg-b10">抵押情况（车产）：{{detailData.carMortgageStatus}}</div>
+            <div class="col-6 mg-t5 mg-b10">估值（车产）：{{detailData.carValuation}}</div>
+        </fieldset>
+
+        <fieldset class="fieldset">
+            <legend class="legend">申请订单记录</legend>
+            <el-table :data="applyRecordList" stripe border>
+                <el-table-column prop="ProductName" label="产品名称"></el-table-column>
+                <el-table-column prop="ProductType" label="接入类型"></el-table-column>
+                <el-table-column prop="ApplyPhone" label="申请号码"></el-table-column>
+                <el-table-column prop="ApplyAmount" label="申请金额"></el-table-column>
+                <el-table-column prop="ApplyDeadline" label="申请期限"></el-table-column>
+                <el-table-column prop="ApplyTime" label="申请时间"></el-table-column>
+                <el-table-column prop="PlatformType" label="平台类型"></el-table-column>
+                <el-table-column prop="PromotionChannel" label="推广渠道"></el-table-column>
+            </el-table>
+        </fieldset>
+
+        <fieldset>
+            <div class="pull-right">
+                <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="recordPageIndex" :page-sizes="[10, 20, 50, 100]" :page-size="recordPageSize" layout="total, sizes, prev, pager, next, jumper" :total="totalCount"></el-pagination>
+            </div>
+        </fieldset>
+
+    </div>
+</template>
+
+<script>
+export default {
+    props: ["user"],
+    watch: {
+        user: function(user) {
+            this.getUserInfo(user.id);
+            this.getUserApplyRecord(user.phone);
+        }
+    },
+    data() {
+        return {
+            recordPageIndex: 1,
+            recordPageSize: 10,
+            applyRecordList: [],
+            totalCount: 0,
+            detailData: {}
+        };
+    },
+    methods: {
+        handleSizeChange(val) {
+            this.recordPageSize = val;
+            this.getUserApplyRecord(this.user.phone);
+        },
+        handleCurrentChange(val) {
+            this.recordPageIndex = val;
+            this.getUserApplyRecord(this.user.phone);
+        },
+        judgeDataIsNull(data) {
+            //判断数据是否为空，空字符串或空对象都返回true，否则返回false，即数据不为空
+            if (data == undefined || data == null || data == "" || JSON.stringify(data) == "{}") {
+                return true;
+            } else {
+                return false;
+            }
+        },
+        getUserInfo(userId) {
+            if (userId == null || userId == "") {
+                return;
+            }
+            this.$api.vkcPost("supermarketloan/mgr/userManagement/getUserInfo", { userId: userId }, res => {
+                // console.log(res);
+                this.detailData = res;
+            });
+        },
+        getUserApplyRecord(userPhone) {
+            if (userPhone == null || userPhone == "") {
+                return;
+            }
+            let _this = this;
+            let param = {
+                param: {
+                    phone: userPhone,
+                    pageIndex: _this.recordPageIndex,
+                    pageSize: _this.recordPageSize
+                }
+            };
+            _this.$api.vkcPost(
+                "supermarketloan/mgr/userManagement/getApplyOrder",
+                param,
+                res => {
+                    if (!_this.judgeDataIsNull(res)) {
+                        if (res.code == "0" || res.code == 0) {
+                            _this.totalCount = res.totalCount;
+                            _this.applyRecordList = res.data;
+                            // console.log("申请记录");
+                            // console.log(res)
+                        } else {
+                            this.$message.error(res.msg);
+                        }
+                    }
+                },
+                "all"
+            );
+        }
+    }
+};
+</script>

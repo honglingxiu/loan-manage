@@ -1,0 +1,220 @@
+<template>
+  <div>
+    <div class="clearfix breadcrumb">
+            <span class="font">当前位置：订单管理
+                <span v-show="!showList">> 详情</span>
+            </span>
+      <el-button type="primary" class="back" @click="showList=true" v-show="!showList">返回上一页</el-button>
+    </div>
+    <div v-show="showList">
+      <el-form :inline="true" :model="formData" size="small" class="demo-form-inline">
+        <el-form-item label="产品名称：">
+          <el-input v-model="formData.productName" placeholder="请输入产品名称" class="width200"></el-input>
+        </el-form-item>
+        <!--<el-form-item label="提交客户：">
+          <el-input v-model="formData.customerName" placeholder="请输入提交客户" class="width200"></el-input>
+        </el-form-item>-->
+        <el-form-item label="提交客户：">
+          <jb-customerList v-model="formData.customerName" :show="true"></jb-customerList>
+        </el-form-item>
+        <el-form-item label="用户号码：">
+          <el-input type="tel" :maxlength="11" v-model="formData.phone" placeholder="请输入用户号码"
+                    class="width200"></el-input>
+        </el-form-item>
+        <el-form-item label="用户姓名：">
+          <el-input v-model="formData.name" placeholder="请输入用户姓名" class="width200"></el-input>
+        </el-form-item>
+        <el-form-item label="注册平台：">
+          <el-select v-model="formData.platformType" placeholder="请选择注册平台" @change="getpromotionchannelitem"
+                     class="width200">
+            <el-option label="全部" value=""></el-option>
+            <el-option label="安卓" value="Android app"></el-option>
+            <el-option label="iOS" value="IOS app"></el-option>
+            <el-option label="H5" value="H5"></el-option>
+            <el-option label="H5活动推广" value="H5活动推广"></el-option>
+            <el-option label="自主创建" value="自主创建"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="注册渠道：">
+          <el-select v-model="formData.promotionChannel" filterable placeholder="请选择注册渠道" size="small" class="width200">
+            <el-option v-for="item in channelList" :key="item.value" :label="item.promotionChannel"
+                       :value="item.id"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="提交方式：">
+          <el-select v-model="formData.submitWay" placeholder="请选择提交方式" class="width200">
+            <el-option label="全部" value=""></el-option>
+            <el-option label="API" value="1"></el-option>
+            <el-option label="线下" value="3"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="提交类型：">
+          <el-select v-model="formData.submitType" placeholder="请选择提交类型" class="width200">
+            <el-option label="全部" value=""></el-option>
+            <el-option label="贷款" value="1"></el-option>
+            <el-option label="赠险" value="2"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="认领状态：">
+          <el-select v-model="formData.claimState" placeholder="请选择认领状态" class="width200">
+            <el-option label="全部" value=""></el-option>
+            <el-option label="待认领" value="0"></el-option>
+            <el-option label="已认领" value="1"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="分发次序：">
+          <el-select v-model="formData.sequence" placeholder="请选择分发次序" class="width100">
+            <el-option label="全部" value=""></el-option>
+            <el-option label="一级分发" value="1"></el-option>
+            <el-option label="二级分发" value="2"></el-option>
+            <el-option label="三级分发" value="3"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="search()">查询</el-button>
+        </el-form-item>
+      </el-form>
+
+      <div style="margin-bottom:20px">
+        <el-table :data="tableData" stripe tooltip-effect='light' border>
+          <el-table-column label="序号" align='center' type="index" :index="$api.IndexMethod(formData.pageIndex,formData.pageSize)" width="55"></el-table-column>
+          <el-table-column prop="phone" label="用户号码" align='center' width="120"></el-table-column>
+          <el-table-column prop="name" label="用户姓名" align='center'></el-table-column>
+          <el-table-column prop="platformType" label="注册平台" align='center'
+                           :show-overflow-tooltip='true'></el-table-column>
+          <el-table-column prop="promotionChannel" label="注册渠道" align='center'
+                           :show-overflow-tooltip='true'></el-table-column>
+          <el-table-column prop="submitWay" label="提交方式" align='center'>
+            <!--<template slot-scope="scope">
+              <span v-if="scope.row.submitType==='3'">线下</span>
+              <span v-else>API</span>
+            </template>-->
+          </el-table-column>
+          <el-table-column prop="customerName" label="提交客户" align='center'
+                           :show-overflow-tooltip='true' width="300"></el-table-column>
+          <el-table-column label="提交类型" align='center'>
+            <template slot-scope="scope">
+              <span v-if="scope.row.submitType==='2'">赠险</span>
+              <span v-else-if="scope.row.submitType==='1'">贷款</span>
+              <span v-else >{{scope.row.submitType}}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="productName" label="提交产品" align='center'></el-table-column>
+          <el-table-column prop="createDate" label="生成订单时间" align='center'
+                            width="160"></el-table-column>
+          <el-table-column label="订单状态" align='center'>
+            <template slot-scope="scope">
+              <span v-if="scope.row.submitState=='0'">未提交</span>
+              <span v-else-if="scope.row.submitState=='1'" class="c409EFF">提交成功</span>
+              <span v-else class="cred">提交失败</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="分发次序" prop="sequence" align='center'>待后台接口提交后改这个
+            <!--<template slot-scope="scope">
+              <span v-if="scope.row.sequence==='1'">一级分发</span>
+              <span v-if="scope.row.sequence==='2'">二级分发</span>
+              <span v-if="scope.row.sequence==='3'">三级分发</span>
+            </template>-->
+          </el-table-column>
+          <el-table-column prop="claimState" label="认领状态" align='center'>
+            <template slot-scope="scope">
+              <span v-if="scope.row.claimState==='0'" class="c409EFF">待认领</span>
+              <span v-else-if="scope.row.claimState==='1'" class="c409EFF">已认领</span>
+              <span v-else>{{scope.row.claimState}}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作">
+            <template slot-scope="scope">
+              <el-button type="text" @click="details(scope.row.id)">详情</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div style="float: right">
+        <el-pagination @current-change="handleCurrentChange" @size-change="handleSizeChange"
+                       :current-page="formData.pageIndex" :page-sizes="[10, 20, 50, 100]" :page-size="formData.pageSize"
+                       layout="total, sizes, prev, pager, next, jumper" :total="totalCount"></el-pagination>
+      </div>
+    </div>
+    <div v-show="!showList">
+      <orderDetails :detailData="detailData"></orderDetails>
+    </div>
+
+  </div>
+</template>
+
+<script>
+  import orderDetails from "./orderDetails.vue";
+
+  export default {
+    components: {
+      orderDetails
+    },
+    data() {
+      return {
+        totalCount: 0,
+        showList: true,
+        tableData: [],
+        detailData: {},
+        channelList: [],
+        formData: {
+          pageIndex: 1,
+          pageSize: 10,
+          productName: "",
+          customerName: "",
+          phone: "",
+          name: "",
+          platformType: "",
+          promotionChannel: "",
+          submitWay: "",
+          submitType: "",
+          claimState:"",
+          sequence:""//分发次序
+        }
+      };
+    },
+    methods: {
+      search() {
+        this.formData.pageIndex = 1;
+        this.getOrderList();
+      },
+      handleSizeChange(val) {
+        this.formData.pageSize = val;
+        this.formData.pageIndex = 1;
+        this.getOrderList();
+      },
+      handleCurrentChange(val) {
+        this.formData.pageIndex = val;
+        this.getOrderList();
+      },
+      getpromotionchannelitem() {
+        let param = {param: {platformType: this.formData.platformType}};
+        this.$api.vkcPost("supermarketloan/mgr/loanapply/getpromotionchannelitem", param, res => {
+          this.formData.promotionChannel = "";
+          this.channelList = res;
+        });
+      },
+      getOrderList() {
+        this.$api.vkcPost2(
+          "supermarketloan/crm/order/pageOrder",
+          this.formData,
+          res => {
+            this.totalCount = res.totalCount;
+            this.tableData = res.data;
+          },
+          "getAllData"
+        );
+      },
+      details(id) {
+        this.$api.vkcPost2("supermarketloan/crm/order/orderDetail", {orderId: id}, res => {
+          this.detailData = res;
+          this.showList = false;
+        });
+      }
+    },
+    created() {
+      this.getpromotionchannelitem();
+      this.getOrderList();
+    }
+  };
+</script>

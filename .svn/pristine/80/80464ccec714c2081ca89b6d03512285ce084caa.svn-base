@@ -1,0 +1,248 @@
+<template>
+  <div>
+    <div>
+      <el-form ref="formData" :model="formData" :inline="true" size="small">
+        <el-form-item label="申请时间：">
+          <el-date-picker v-model="formData.startAndEndTime" type="daterange" start-placeholder="开始日期"
+                          end-placeholder="结束日期" value-format="yyyy-MM-dd" @change="getDate"
+                          size="small"></el-date-picker>
+        </el-form-item>
+        <el-form-item label="产品名称：">
+          <el-input v-model="formData.productName" placeholder="请输入" size="small"></el-input>
+        </el-form-item>
+        <el-form-item label="接入类型：">
+          <el-select v-model="formData.productType" placeholder="请选择" size="small">
+            <el-option label="全部" value=""></el-option>
+            <el-option label="API" value="API"></el-option>
+            <el-option label="H5" value="H5"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="任务编号：">
+          <el-input v-model="formData.taskId" placeholder="请输入" size="small"></el-input>
+        </el-form-item>
+        <el-form-item label="注册平台：">
+          <el-select v-model="formData.platformType" placeholder="请选择注册平台" size="small"
+                     @change="getpromotionchannelitem">
+            <el-option label="全部" value=""></el-option>
+            <el-option label="安卓" value="Android app"></el-option>
+            <el-option label="iOS" value="IOS app"></el-option>
+            <el-option label="H5" value="H5"></el-option>
+            <el-option label="H5活动推广" value="H5活动推广"></el-option>
+            <el-option label="自主创建" value="自主创建"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="注册渠道：">
+          <el-select v-model="formData.promotionChannel" filterable placeholder="请选择" size="small">
+            <el-option v-for="item in channelList" :key="item.value" :label="item.promotionChannel"
+                       :value="item.id"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="当前状态：">
+          <el-select v-model="formData.disbutionState" placeholder="请选择" size="small">
+            <el-option label="全部" value=""></el-option>
+            <el-option label="未提交" value="0"></el-option>
+            <el-option label="已提交" value="1"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="处理结果：">
+          <el-select v-model="formData.dealResult" placeholder="请选择" size="small">
+            <el-option label="全部" value=""></el-option>
+            <el-option label="待处理" value="0"></el-option>
+            <el-option label="通过" value="1"></el-option>
+            <el-option label="不通过" value="2"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="提交角色：">
+          <el-select v-model="formData.submitPermType" placeholder="请选择" size="small">
+            <el-option label="全部" value=""></el-option>
+            <el-option label="提交客服" value="1"></el-option>
+            <el-option label="提交客户" value="2"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="申请金额：">
+          <el-input type="number" min="0" @blur="checkAmount('applyAmountStart')" v-model="formData.applyAmountStart"
+                    class="width100" size="small"></el-input>
+          ——
+          <el-input type="number" min="0" @blur="checkAmount('applyAmountEnd')" v-model="formData.applyAmountEnd"
+                    class="width100" size="small"></el-input>
+        </el-form-item>
+        <el-form-item label="申请期限：">
+          <el-select v-model="formData.applyDeadline" placeholder="请选择" size="small">
+            <el-option v-for="item in applyDeadlineList" :key="item.applyDeadline" :label="item.applyDeadline"
+                       :value="item.applyDeadline"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="getOrderList(1)" icon="el-icon-search">查询</el-button>
+          <!-- <el-button type="text" @click="$refs.importDialog.dialogVisible=true">导入</el-button> -->
+          <el-button type="primary" @click="submitDialog()">提交</el-button>
+          <el-button type="primary" @click="$parent.currentView='addRecord'">创建</el-button>
+          <!-- <el-button type="text" @click="isSelectionAll = !isSelectionAll">{{isSelectionAll?'取消全选':'全选'}}</el-button> -->
+          <!-- <el-button type="text" @click="exportData()"></el-button> -->
+        </el-form-item>
+        <div class="pull-right fs12 c333">
+          <span
+            class="mg-r15">{{isSelectionAll?'已选中号码 '+totalCount+' 条':'已选中数据 '+formData.choiceItem.length+' 条'}}</span>
+        </div>
+      </el-form>
+
+      <div style="margin-bottom:20px">
+        <el-table ref="multipleTable" @selection-change="handleSelectionChange" :row-key="'applyId'" :data="tableData"
+                  stripe tooltip-effect='light' border>
+          <el-table-column type="selection" reserve-selection width="55" v-if="!isSelectionAll"></el-table-column>
+          <el-table-column label="序号" align='center' type="index"
+                           :index="$api.IndexMethod(formData.pageIndex,formData.pageSize)"
+                           width="55"></el-table-column>
+          <el-table-column prop="productName" label="产品名称" align='center'
+                           :show-overflow-tooltip='true'></el-table-column>
+          <el-table-column prop="productType" label="接入类型" align='center'
+                           :show-overflow-tooltip='true'></el-table-column>
+          <el-table-column prop="phone" label="申请号码" align='center' :show-overflow-tooltip='true'>
+            <template slot-scope="scope">
+              <span style="color:#20a0ff">{{scope.row.phone}}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="申请金额" align='center' :show-overflow-tooltip='true'>
+            <template slot-scope="scope">
+              <span>{{scope.row.amount}}元</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="deadline" label="申请期限" align='center' :show-overflow-tooltip='true'></el-table-column>
+          <el-table-column prop="applyTime" label="申请时间" align='center' :show-overflow-tooltip='true'></el-table-column>
+          <el-table-column prop="platformType" label="平台类型" align='center'
+                           :show-overflow-tooltip='true'></el-table-column>
+          <el-table-column prop="promotionChannel" label="推广渠道" align='center'
+                           :show-overflow-tooltip='true'></el-table-column>
+          <el-table-column label="提交状态" align='center' :show-overflow-tooltip='true'>
+            <template slot-scope="scope">
+              <span v-if="scope.row.disbutionState=='1'">已提交</span>
+              <span v-if="scope.row.disbutionState=='0'">未提交</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作">
+            <template slot-scope="scope">
+              <el-button type="text" @click="details(scope.row.applyId)">详情</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div style="float: right">
+        <jb-pagination @getList="getOrderList" :totalCount="totalCount"></jb-pagination>
+      </div>
+    </div>
+    <jb-importDialog ref="importDialog"></jb-importDialog>
+    <submitDialog :formData="formData" ref="submitDialog"></submitDialog>
+  </div>
+</template>
+
+<script>
+  import submitDialog from "./submitDialog.vue";
+
+  export default {
+    components: {
+      submitDialog
+    },
+    data() {
+      return {
+        isSelectionAll: false,
+        formData: {
+          startAndEndTime: "", //选择的时间
+          applyStartTime: "", //开始时间
+          applyEndTime: "", //结束时间
+          productName: "", //产品名称
+          productType: "", //产品类型
+          applyResultStatus: "", //申请状态
+          platformType: "", //平台类型
+          promotionChannel: "", //推广渠道
+          taskId: "", //任务编号
+          disbutionState: "", //当前状态
+          dealResult: "", //处理结果
+          submitPermType: "", //提交角色
+          applyAmountStart: "", //申请金额最小值
+          applyAmountEnd: "", //申请金额最大值
+          applyDeadline: "", //申请期限
+          choiceItem: "", //选择条数
+          pageIndex:1,
+          pageSize:10
+        },
+        totalCount: 0,
+        tableData: [],
+        detailData: {},
+        channelList: [],
+        applyDeadlineList: [{applyDeadline: "全部"}]
+      };
+    },
+    methods: {
+      checkAmount(key) {
+        if (this.formData[key] === "" || this.formData[key] >= 0) return;
+        this.formData[key] = "0";
+      },
+      getDate(val) {
+        if (val) {
+          this.formData.applyStartTime = val[0];
+          this.formData.applyEndTime = val[1];
+          return;
+        }
+        this.formData.applyStartTime = "";
+        this.formData.applyEndTime = "";
+      },
+      handleSelectionChange(rows) {
+        this.formData.choiceItem = [];
+        if (rows) {
+          rows.forEach(row => {
+            this.formData.choiceItem.push(row.applyId);
+          });
+        }
+      },
+      getpromotionchannelitem() {
+        let param = {param: {platformType: this.formData.platformType}};
+        this.$api.vkcPost("supermarketloan/mgr/loanapply/getpromotionchannelitem", param, res => {
+          this.formData.promotionChannel = "";
+          this.channelList = res;
+        });
+      },
+      getOrderList(index, size) {
+        if (index) this.formData.pageIndex = index;
+        if (size) this.formData.pageSize = size;
+        // let { choiceItem, ...param } = this.formData;
+        this.$api.vkcPost(
+          "supermarketloan/mgr/loanapply/getuserloanapply",
+          {param: this.formData},
+          res => {
+            this.totalCount = res.totalCount;
+            this.tableData = res.data;
+          },
+          "all"
+        );
+      },
+      details(id) {
+        this.$api.vkcPost("supermarketloan/mgr/loanapply/getuserloandetail", {param: {applyId: id}}, res => {
+          this.$parent.detailData = res;
+          this.$parent.currentView = "orderDetails";
+        });
+      },
+      submitDialog() {
+        if (!this.isSelectionAll && this.formData.choiceItem.length === 0) {
+          this.$alert("请选择要提交的记录", {showClose: false});
+          return;
+        }
+        this.$refs.submitDialog.openDialog();
+      },
+      getApplyDeadline() {
+        this.$api.vkcPost("supermarketloan/mgr/loanapply/findApplyDeadline", {param: ""}, res => {
+          this.applyDeadlineList.push(...res);
+        });
+      },
+      exportData() {
+        this.$api.vkcPost("supermarketloan/mgr/loanapply/exportloanapply", {param: this.formData}, res => {
+          window.location.href = res;
+        });
+      }
+    },
+    created() {
+      this.getpromotionchannelitem();
+      this.getApplyDeadline();
+      this.getOrderList();
+    }
+  };
+</script>

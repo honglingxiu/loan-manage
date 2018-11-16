@@ -1,0 +1,103 @@
+<template>
+    <el-tabs type="border-card">
+        <el-tab-pane label="沟通记录">
+            <ul v-for="(item,key) in tableData" :key="item.id" class="mg-b20">
+                <hr v-if="key>0" />
+                <li class="row clearfix lh30">
+                    <label class="col-5 text-right">服务开始时间：</label>
+                    <span class="col-7">{{item.serviceStartDate}}</span>
+                </li>
+                <li class="row clearfix lh30">
+                    <label class="col-5 text-right">操作客服：</label>
+                    <span class="col-7">{{item.noteName}}</span>
+                </li>
+                <li class="row clearfix lh30">
+                    <label class="col-5 text-right">通话时长：</label>
+                    <span class="col-7">{{item.soundTimeLenthStr}}</span>
+                </li>
+                <li class="row clearfix lh30">
+                    <label class="col-5 text-right">处理结果：</label>
+                    <div class="col-7">
+                        <span class="mg-r15">{{getDealResult(item.dealResult)}}</span>
+                        <el-button type="text" class="c0ca535" v-if="item.dealResult==='2'" @click="$alert(item.remark,{showClose:false})" style="padding:0">查看处理意见</el-button>
+                    </div>
+                </li>
+                <li class="row clearfix lh30">
+                    <label class="col-5 text-right">质检评分：</label>
+                    <span class="col-7">{{item.score}}</span>
+                </li>
+                <li class="row clearfix lh30">
+                    <label class="col-5 text-right">质检时间：</label>
+                    <span class="col-7">{{item.qualityControlDate}}</span>
+                </li>
+                <li class="text-center mg-t20">
+                    <el-button type="primary" :disabled="soundRow.id===item.id" @click="viewDetail(item)" style="width:50%">详情</el-button>
+                </li>
+            </ul>
+            <div class="text-center mg-t20">
+                <jb-pagination layout="total, prev, pager, next" :totalCount="totalCount" @getList="getCommunicate"></jb-pagination>
+            </div>
+        </el-tab-pane>
+    </el-tabs>
+</template>
+
+<script>
+import { mapGetters, mapActions } from "vuex";
+export default {
+    data() {
+        return {
+            totalCount: 0,
+            tableData: []
+        };
+    },
+    computed: {
+        ...mapGetters(["soundRow"])
+    },
+    methods: {
+        ...mapActions(["getSoundDetail"]),
+        getDealResult(code) {
+            switch (code) {
+                case "0":
+                    return "未处理";
+                case "1":
+                    return "通过";
+                case "2":
+                    return "不通过";
+                case "3":
+                    return "无效录音";
+                default:
+                    return "";
+            }
+        },
+        getCommunicate(index) {
+            let param = {
+                customerServiceOrderId: this.soundRow.customerServiceOrderId,
+                pageIndex: index || 1,
+                pageSize: 2
+            };
+            return new Promise((resolve, reject) => {
+                this.$api.vkcPost2(
+                    "supermarketloan/crm/sound/findCommunicationRecord",
+                    param,
+                    res => {
+                        this.totalCount = res.totalCount;
+                        this.tableData = res.data;
+                        resolve(true);
+                    },
+                    "getAllData"
+                );
+            });
+        },
+        viewDetail(item) {
+            this.$store.commit("GET_SOUND_ROW", item);
+            this.getSoundDetail().then(res => {
+                this.$message({
+                    message: "查询成功！",
+                    type: "success",
+                    duration: 1000
+                });
+            });
+        }
+    }
+};
+</script>

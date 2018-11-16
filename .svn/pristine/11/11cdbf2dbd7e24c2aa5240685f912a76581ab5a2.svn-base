@@ -1,0 +1,147 @@
+<template>
+  <div>
+    <div class="clearfix breadcrumb">
+            <span class="font">当前位置：活动管理 > 申请记录
+                <span v-show="showDetail"> > 详情</span>
+            </span>
+      <el-button type="primary" class="back" @click="showDetail=false" v-show="showDetail">返回上一页</el-button>
+    </div>
+    <div v-show="!showDetail">
+      <div class="mg15 mg-l0" style="line-height:50px">
+        <span>手机号码：</span>
+        <el-input type="phone" v-model="applyPhone" placeholder="请输入手机号码" style="width:200px"></el-input>
+        <span>产品名称：</span>
+        <el-input v-model="productName" placeholder="请输入产品名称" style="width:200px"></el-input>
+        <span>活动名称：</span>
+        <el-input v-model="eventMarketName" placeholder="请输入活动名称" style="width:200px"></el-input>
+        <span>推广渠道：</span>
+        <el-select v-model="promotionH5Channel" filterable placeholder="请选择">
+          <el-option v-for="item in channelOptions" :key="item.value" :label="item.promotionChannel"
+                     :value="item.id"></el-option>
+        </el-select>
+        <el-button type="text" @click="getuserloanapply()" icon="search">查询</el-button>
+        <el-button type="text" @click="exportData()">导出</el-button>
+      </div>
+      <el-table :data="applyList" stripe border>
+        <el-table-column label="序号" align='center' type="index"
+                         :index="$api.IndexMethod(pageIndex,pageSize)" width="55"></el-table-column>
+        <el-table-column prop="applyPhone" label="申请号码" align="center"></el-table-column>
+        <el-table-column prop="ip" label="公网IP" align="center"></el-table-column>
+        <el-table-column prop="cityProvince" label="省份" align="center"></el-table-column>
+        <el-table-column prop="cityDowntown" label="城市" align="center"></el-table-column>
+        <el-table-column prop="applyAmount" label="申请金额" align="center"></el-table-column>
+        <el-table-column prop="productName" label="申请产品" align="center" show-overflow-tooltip></el-table-column>
+        <el-table-column prop="eventMarketName" label="活动来源" align="center" show-overflow-tooltip></el-table-column>
+        <el-table-column prop="promotionH5Channel" label="推广渠道" align="center" show-overflow-tooltip></el-table-column>
+        <el-table-column prop="applyTime" label="申请时间" align="center" width="180px"
+                         show-overflow-tooltip></el-table-column>
+        <el-table-column prop="bidCostAmount" label="计费价格" align="center"></el-table-column>
+        <el-table-column prop="operation" label="操作" align="center">
+          <template slot-scope="scope">
+            <el-button type="text" @click="openDetails(scope.row.applyId)">详情</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="mg15 mg-r0 pull-right">
+        <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="pageIndex"
+                       :page-sizes="[10, 20, 50, 100]" :page-size="pageSize"
+                       layout="total, sizes, prev, pager, next, jumper" :total="totalCount"></el-pagination>
+      </div>
+    </div>
+    <div v-show="showDetail">
+      <Details :detailData="detailData"/>
+    </div>
+  </div>
+</template>
+
+<script>
+  import Details from "./Details.vue";
+
+  export default {
+    components: {
+      Details
+    },
+    data() {
+      return {
+        showDetail: false,
+        detailData: "",
+        applyList: [],
+        channelOptions: [],
+        applyPhone: "",
+        productName: "",
+        eventMarketName: "",
+        promotionH5Channel: "",
+        pageIndex: 1,
+        pageSize: 10,
+        totalCount: 0
+      };
+    },
+    methods: {
+      handleSizeChange(val) {
+        this.pageSize = val;
+        this.getuserloanapply();
+      },
+      handleCurrentChange(val) {
+        this.pageIndex = val;
+        this.getuserloanapply();
+      },
+      getpromotionchannelitem() {
+        let param = {param: {platformType: "H5活动推广"}};
+        this.$api.vkcPost("supermarketloan/mgr/loanapply/getpromotionchannelitem", param, res => {
+          // console.log(res);
+          this.channelOptions = res;
+        });
+      },
+      getuserloanapply() {
+        if (this.applyPhone !== "" && this.$api.checkMobile(this.applyPhone) === false) return;
+        let param = {
+          param: {
+            applyPhone: this.applyPhone,
+            productName: this.productName,
+            eventMarketName: this.eventMarketName,
+            promotionH5Channel: this.promotionH5Channel,
+            pageIndex: this.pageIndex,
+            pageSize: this.pageSize
+          }
+        };
+        // console.log(param);
+        this.$api.vkcPost(
+          "supermarketloan/mgr/eventmarket/loanapply/getuserloanapply",
+          param,
+          res => {
+            this.applyList = res.data;
+            this.totalCount = res.totalCount;
+          },
+          "all"
+        );
+      },
+      openDetails(applyId) {
+        this.detailData = "";
+        let param = {param: {applyId: applyId}};
+        this.$api.vkcPost("supermarketloan/mgr/eventmarket/loanapply/getuserloandetail", param, res => {
+          if (Object.keys(res).length !== 0) {
+            this.detailData = res;
+          }
+          this.showDetail = true;
+        });
+      },
+      exportData() {
+        if (this.applyPhone !== "" && this.$api.checkMobile(this.applyPhone) === false) return;
+        window.location.href =
+          this.$api.baseUrl() +
+          "supermarketloan/mgr/eventmarket/loanapply/exportuserapplydetaildata?applyPhone=" +
+          this.applyPhone +
+          "&productName=" +
+          this.productName +
+          "&eventMarketName=" +
+          this.eventMarketName +
+          "&promotionH5Channel=" +
+          this.promotionH5Channel;
+      }
+    },
+    created() {
+      this.getpromotionchannelitem();
+      this.getuserloanapply();
+    }
+  };
+</script>

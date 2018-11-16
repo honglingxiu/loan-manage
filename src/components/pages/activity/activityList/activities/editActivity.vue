@@ -1,0 +1,227 @@
+<template>
+    <div>
+        <div class="underline pd15 pd-l0">活动基本信息</div>
+        <addAct ref="addAct" fromWhere="editActivity" :allData="actInfo" />
+        <div class="underline pd15 pd-l0">
+            设置表单
+            <span class="pull-right editForm" @click="editForm()">编辑</span>
+        </div>
+        <el-table :data="submitForm" stripe border>
+            <el-table-column prop="metaDesc" label="控件名称"></el-table-column>
+            <el-table-column prop="onlineState" label="使用状态">
+                <template slot-scope="scope">
+                    <span v-if="scope.row.onlineState==='0'">启用</span>
+                    <span style="color:red" v-else>禁用</span>
+                </template>
+            </el-table-column>
+            <el-table-column prop="required" label="必填/非必填">
+                <template slot-scope="scope">
+                    <el-radio v-model="scope.row.required" :label="1">必填</el-radio>
+                    <el-radio v-model="scope.row.required" :label="0">非必填</el-radio>
+                </template>
+            </el-table-column>
+            <el-table-column prop="sortNum" label="排序权重" width="120" align="center">
+                <template slot-scope="scope">
+                    <el-input type="number" min="1" size="small" v-model="scope.row.sortNum"></el-input>
+                </template>
+            </el-table-column>
+            <el-table-column prop="onlineState" label="操作">
+                <template slot-scope="scope">
+                    <el-button type="text" @click="scope.row.onlineState==='0'?scope.row.onlineState='1':scope.row.onlineState='0'">
+                        {{scope.row.onlineState==='0'? '禁用':'启用'}}
+                    </el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <div class="text-center mg15">
+            <el-button @click="$router.back()">返 回</el-button>
+            <el-button type="primary" @click="submit">提交保存</el-button>
+        </div>
+
+        <el-dialog title="编辑控件" :visible.sync="dialogVisible" width="30%">
+            <ul class="act-tags clearfix">
+                <li v-for="item in formmeta" :key="item.id" :class="{active: item.selectFlag,isactive: item.newSelectFlag}" @click="item.selectFlag?'':item.newSelectFlag = !item.newSelectFlag">{{item.metaDesc}}</li>
+            </ul>
+            <div slot="footer" class="dialog-footer text-center">
+                <el-button type="primary" @click="dialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="saveForm()">保 存</el-button>
+            </div>
+        </el-dialog>
+    </div>
+</template>
+
+<script>
+import addAct from "./addAct";
+export default {
+    components: {
+        addAct
+    },
+    data() {
+        return {
+            dialogVisible: false,
+            activityId:'',
+            actInfo: {},
+            submitForm: [],
+            formmeta: []
+        };
+    },
+    methods: {
+        getActivityInfo() {
+            let param = { param: { eventMarketId: this.activityId } };
+            this.$api.vkcPost("supermarketloan/mgr/eventmarket/geteventmarketinfo", param, res => {
+                // console.log(res);
+                let { submitForm, ...actInfo } = res;
+                this.actInfo = actInfo;
+                this.submitForm = submitForm;
+                this.getmetadata();
+            });
+        },
+        getmetadata() {
+            this.$api.vkcPost("supermarketloan/mgr/formmeta/getmetadata", "", res => {
+                res.forEach(v => {
+                    v["newSelectFlag"] = false;
+                    for (let value of this.submitForm) {
+                        if (v.id === value.metaDataId) {
+                            v.selectFlag = true;
+                            break;
+                        }
+                        v.selectFlag = false;
+                    }
+                });
+                this.formmeta = res;
+            });
+        },
+        editForm() {
+            if (this.submitForm.length !== 0) {
+                this.formmeta.forEach(v => {
+                    v.newSelectFlag = false;
+                    for (let value of this.submitForm) {
+                        if (v.id === value.metaDataId) {
+                            v.selectFlag = true;
+                            break;
+                        }
+                        v.selectFlag = false;
+                    }
+                });
+            }
+            this.dialogVisible = true;
+        },
+        checkSortNum() {
+            for (let index = 0; index < this.submitForm.length; index++) {
+                let element = this.submitForm[index];
+                if (!this.$api.isNumber(element.sortNum)) {
+                    this.$message({
+                        message: "排序权重请输入大于0的整数!",
+                        type: "warning"
+                    });
+                    return false;
+                }
+            }
+            return true;
+        },
+        saveForm() {
+            let formDataId = '';
+            if(this.submitForm.length!==0){
+                formDataId = this.submitForm[0].formDataId;
+            }
+            this.formmeta.forEach(v => {
+                if (v.newSelectFlag === true) {
+                    this.submitForm.push({
+                        controlParamValue: v.controlParamValue,
+                        metaName: v.metaName,
+                        formDataId: formDataId,
+                        controlType: v.controlType,
+                        metaDataId: v.id,
+                        metaDesc: v.metaDesc,
+                        onlineState: "0",
+                        remark: "",
+                        sortNum: 1,
+                        required: 1
+                    });
+                }
+            });
+            this.dialogVisible = false;
+        },
+        submit() {
+            if (!this.checkSortNum()) return;
+            this.$api.showLoading("正在提交");
+            let { eventMarketUrl, homeBannerUrl, productListBannerUrl, finishBannerUrl, ...actFormData } = this.$refs.addAct.formData;
+            let param = {
+                param: {
+                    ...actFormData,
+                    submitForm: `${JSON.stringify(this.submitForm)}`
+                }
+            };
+            // console.log(param);
+            this.$api.vkcPost("supermarketloan/mgr/eventmarket/submitedit", param, res => {
+                this.$api.hideLoading();
+                this.$alert("保存成功", {
+                    callback: action => {
+                        this.$router.back();
+                    }
+                });
+            });
+        }
+    },
+    created() {
+        let d = this.$api.getSStorage('actListRow');
+        if(!d) {this.$router.back();return;};
+        this.activityId = d.id;
+        this.$store.commit("CHANGE_TITLE", ["当前选择活动", d.name]);
+        this.getActivityInfo();
+    }
+};
+</script>
+
+<style scoped>
+.jb-icon-plus {
+    position: absolute;
+    left: 620px;
+    top: 9px;
+    font-size: 20px;
+}
+.jb-icon-delete {
+    position: absolute;
+    left: 620px;
+    top: 59px;
+    font-size: 20px;
+}
+.input300 {
+    width: 300px;
+}
+.el-textarea {
+    width: 600px;
+}
+.border {
+    width: 100%;
+    border: 1px solid black;
+    margin: 20px 0px;
+    padding: 20px 80px;
+}
+.textTop {
+    padding: 0 15px;
+    margin-left: -20px;
+}
+.space {
+    margin: 8px 0;
+    width: 50%;
+    float: left;
+}
+.space span {
+    color: #666;
+}
+.padding0 {
+    padding: 20px 0;
+}
+.padding0 .textTop {
+    margin-left: 50px;
+}
+.underline {
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+.editForm {
+    cursor: pointer;
+    color: #20a0ff;
+}
+</style>

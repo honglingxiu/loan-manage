@@ -1,0 +1,72 @@
+<template>
+    <div>
+        <el-form :model="rankEditInfo" label-width="160px">
+            <el-form-item label="金额范围：" prop="amountRange">{{rankEditInfo.amountRange}}</el-form-item>
+            <el-form-item label="产品名称：" prop="productName">{{rankEditInfo.productName}}</el-form-item>
+            <el-form-item label="当前排名：" prop="rank">{{rankEditInfo.rank}}</el-form-item>
+            <el-form-item label="当前价格（元）：" prop="bidAmount">{{rankEditInfo.bidAmount}}</el-form-item>
+            <el-form-item label="修改价格（元）：" prop="bidAmount">
+                <input type="number" min="0" v-model.number="newBidAmount" @blur="checkAmount()" auto-complete="off" class="width200 pd10" style="border:1px solid #ccc">
+                <el-button type="primary" @click="saveForm()" :loading="openloading">保存</el-button>
+            </el-form-item>
+            <el-form-item label=""><span class="tiptxt">该价格仅作为产品的竞价排序价格，不作为最后结算价格</span></el-form-item>
+        </el-form>
+        <hr class="mg-b20">
+        <p>目前该标段产品排名情况：</p>
+        <el-table :data="rankEditInfo.itemData" stripe width="100%" border class="mg-t15">
+            <el-table-column prop="rank" label="排名" align="center"></el-table-column>
+            <el-table-column prop="productName" label="产品名称" align="center"></el-table-column>
+            <el-table-column prop="bidAmount" label="当前排名价格（元）" align="center"></el-table-column>
+        </el-table>
+    </div>
+</template>
+<script>
+import { mapGetters, mapActions } from "vuex";
+export default {
+    data() {
+        return {
+            newBidAmount: "4.0",
+            openloading: false,
+            rankEditInfo: {}
+        };
+    },
+    computed: {
+        ...mapGetters(["rankRow"])
+    },
+    methods: {
+        checkAmount() {
+            this.newBidAmount === "" || this.newBidAmount < 0 ? (this.newBidAmount = "0.0") : (this.newBidAmount = this.$api.toDecimal(this.newBidAmount, 1));
+        },
+        saveForm() {
+            this.openloading = true;
+            let param = this.rankRow;
+            if (Number(this.newBidAmount) !== 0) {
+                param.param.bidAmount = this.newBidAmount;
+            } else {
+                param.param.bidAmount = "0";
+            }
+            // console.log(param);
+            this.$api.vkcPost("supermarketloan/mgr/eventmarket/bidranking/submiteditdetail", param, res => {
+                // console.log(res);
+                this.openloading = false;
+                this.getRankEditInfo();
+            },'all');
+        },
+        getRankEditInfo() {
+            // console.log(this.rankRow);
+            this.$api.vkcPost("supermarketloan/mgr/eventmarket/bidranking/geteditdetail", this.rankRow, res => {
+                // console.log(res);
+                if (Number(res.bidAmount) > 0) this.newBidAmount = res.bidAmount;
+                this.rankEditInfo = res;
+            });
+        }
+    },
+    created() {
+        if (this.rankRow === "") {
+            this.$router.back();
+            return;
+        }
+        this.getRankEditInfo();
+    }
+};
+</script>

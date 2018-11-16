@@ -1,0 +1,457 @@
+<template>
+	<div>
+		<div class="clearfix"  v-show="showPreviewBtn"><el-button type="primary" class="back" @click="toPrevPage">返回上一页</el-button></div>
+		<div class="ms-doc" v-show="!showAddPage&&!showDetailPage&&!showEditPage">
+			<span class="mg15">广告位置</span>
+			<el-select v-model="advertisName" placeholder="请选择" size="small" @change="exchangeADType">
+				<el-option v-for="item in adPositionList" :key="item.positionType" :label="item.positionTypeChinese"
+					:value="item.positionType">
+				</el-option>
+			</el-select>
+
+			<span class="mg15">发布状态</span>
+			<el-select v-model="OnlineState" placeholder="请选择" size="small" @change="exchangeADState">
+				<el-option v-for="item in onlineStateList" :key="item.numValue" :label="item.chinaValue"
+					:value="item.numValue">
+				</el-option>
+			</el-select>
+
+			<el-button type="text" icon="search" @click="searchAd">查询</el-button>
+			<el-button type="text" style="float:right" @click="addNewAd">新增广告</el-button>
+			<br><br>
+			<el-table :data="adList" border style="width: 100%;">
+        <el-table-column label="序号" align='center' type="index"
+                         :index="$api.IndexMethod(pageIndex,pageSize)" width="55"></el-table-column>
+				<el-table-column prop="positionTypeChinese" label="广告位置" align="center"></el-table-column>
+				<el-table-column prop="tagName" label="广告主题" align="center"></el-table-column>
+				<el-table-column prop="onlineState" label="发布状态" align="center">
+					<template slot-scope="scope">
+						<span v-if="scope.row.onlineState=='0'" style="color:green">已上线</span>
+						<span v-if="scope.row.onlineState=='1'" style="color:red">已下线</span>
+					</template>
+				</el-table-column>
+				<el-table-column prop="onlineState" label="操作" align="center">
+					<template slot-scope="scope">
+						<el-button type="text" size="small" v-show="scope.row.onlineState=='1'" class="upline"
+							@click="setADState(scope.row)">上线
+						</el-button>
+						<el-button type="text" size="small" v-show="scope.row.onlineState=='0'" class="upline"
+							@click="setADState(scope.row)">下线
+						</el-button>
+						<el-button type="text" size="small" @click="adDetail(scope.row)">查看</el-button>
+						<el-button type="text" size="small" v-show="scope.row.onlineState=='1'"
+							@click="editAdvertisement(scope.row)">编辑</el-button>
+						<el-button type="text" size="small" v-show="scope.row.onlineState=='1'"
+							@click="confirmDeleteAd(scope.row.id)">删除
+						</el-button>
+					</template>
+				</el-table-column>
+				<el-table-column prop="sortNum" label="排序权重" width="120" align="center">
+					<template slot-scope="scope">
+						<el-input  class="weight" size="mini" v-model="scope.row.sortNum" @change="getSortNum"></el-input>
+						<el-button size="mini" type="text" @click="setSortNum(scope.row)" >设置</el-button>
+					</template>
+				</el-table-column>
+			</el-table>
+
+			<div class="block">
+				<el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange"
+					:current-page="pageIndex" :page-sizes="[10, 20, 50, 100]" :page-size="pageSize"
+					layout="total, sizes, prev, pager, next, jumper" :total="totalCount">
+				</el-pagination>
+			</div>
+		</div>
+
+		<div v-show="showAddPage">
+			<addAd :toIndexPage="toIndexPage" @addSuccess="reloadAdList"></addAd>
+		</div>
+
+		<div v-show="showEditPage">
+			<editAd :advert="advertisment" @editSuccess="reloadAdList"
+			@dataChangeed="judgeEditPageNeedReset"></editAd>
+		</div>
+
+		<div>
+			<adDetail v-show="showDetailPage" :advert="advertInfo" ></adDetail>
+		</div>
+	</div>
+</template>
+
+<script>
+import addAd from './addAd.vue';
+import adDetail from './adDetail.vue';
+import editAd from './editAd.vue'
+export default {
+	components:{
+		addAd,
+		adDetail,
+		editAd
+	},
+	data: function() {
+		return {
+			showAddPage: false,
+			showDetailPage:false,
+			showPreviewBtn:false,
+			showEditPage:false,
+			value: '',
+			advertisName:"",//广告位置
+			OnlineState:'',//上下线状态，2：全部，0：上线，1：下线
+			adList:[],
+			advertisment:{'resetPage':false},
+			advertInfo:{
+				toIndexPage:false
+			},
+			tempSortNum:0,
+			adPositionList:[],
+			onlineStateList:[],
+
+			pageIndex:1,
+			pageSize:10,
+			totalCount:0,
+			toIndexPage:false,
+
+			isEditPageNeedReset:false,
+
+			tableData: [{
+				position: '首页滚动banner',
+				theme: '闪电借款产品推广',
+				status: '已上线',
+			}, {
+				position: '首页滚动banner',
+				theme: '拍拍极速贷产品推广',
+				status: '已下线',
+			}],
+
+			options: [{
+				value: 'headbanner',
+				label: '首页滚动banner'
+			}, {
+				value: 'funcview',
+				label: '功能导航栏'
+			}, {
+				value: 'eventbanner',
+				label: '活动广告',
+			},{
+				value:'middlebanner',
+				label:'中部广告'
+			}]
+		}
+	},
+	methods: {
+		handleSizeChange(val) {
+				console.log(`每页 ${val} 条`);
+				this.pageSize = val;
+				this.pageIndex = 1;
+				this.getAdList();
+
+		},
+		handleCurrentChange(val) {
+				console.log(`当前页: ${val}`);
+				this.pageIndex = val;
+				this.getAdList();
+		},
+		toPrevPage:function(){//返回上一页按钮的操作
+			let _this = this;
+			_this.getAdList();
+			_this.showAddPage=false;
+			_this.showDetailPage = false;
+			_this.showPreviewBtn = false;
+			_this.showEditPage = false;
+			_this.toIndexPage = true;
+			_this.advertInfo.toIndexPage = true;
+		},
+		judgeDataIsNull(data){//判断数据是否为空，空字符串或空对象都返回true，否则返回false，即数据不为空
+			if (data == undefined || data == null || data == "" || JSON.stringify(data) == "{}") {
+				return true;
+			}else{
+				return false;
+			}
+		},
+		getAdPositionList:function(){//获取广告位置下拉框的数据
+				let _this = this;
+				let param = {
+					'param':{
+						'pageIndex':1,
+						'pageSize':1000,
+						'fromLocation':'1'
+					}
+				};
+				_this.$api.vkcPost("supermarketloan/mgr/advertisemen/getadvertislocation",param,res =>{
+					if (!_this.judgeDataIsNull(res)) {
+						if (res.code == "0" || res.code == 0) {
+							// console.log("广告位置列表")
+							// console.log(res)
+							_this.adPositionList = res.data;
+						}else{
+							this.$message.error(res.msg);
+						}
+					}
+				},'all');
+		},
+		getOnlineState(){
+			let _this = this;
+			let param = {
+				'param':{}
+			};
+			_this.$api.vkcPost("supermarketloan/mgr/advertisemen/getOnlineStateDropdown",param,res =>{
+				if (!_this.judgeDataIsNull(res)) {
+					if (res.code == "0" || res.code == 0) {
+						// console.log(res)
+						_this.onlineStateList = res.data;
+					}else{
+						this.$message.error(res.msg);
+					}
+				}
+			},'all');
+		},
+		getSortNum:function(sortNum){
+			this.tempSortNum = sortNum;
+		},
+		setSortNum:function(selectObj){//设置权重
+			let _this = this;
+			let pattern = /^[1-9]{1}\d*$/g;
+			// console.log("被匹配的输入字符："+selectObj.sortNum)
+			let isNumber = pattern.test(selectObj.sortNum);
+			if (isNumber == false) {
+				this.$message("请输入大于0的数字！");
+				return;
+			}else{
+				let param = {
+					'param':{
+						'id':selectObj.id+'',
+						'sortNum':selectObj.sortNum+''
+					}
+				};
+				_this.$api.vkcPost("supermarketloan/mgr/advertisemen/modifyweight",param,res=>{
+					if (!_this.judgeDataIsNull(res)) {
+						if (res.code == 0 || res.code =="0") {
+							_this.getAdList();
+							this.$message({
+                                message: res.msg,
+                                type: "success"
+                            });
+						}else{
+							this.$message.error(res.msg);
+						}
+					}
+				},'all' );
+			}
+
+		},
+		exchangeADType:function(selectedValue){//获取指定类型广告的列表
+			// console.log("选择的值："+selectedValue);
+			let _this = this;
+			_this.advertisName = selectedValue;
+			// _this.getAdList();
+		},
+		exchangeADState(state){
+			this.OnlineState = state;
+		},
+		addNewAd:function(){
+			let _this = this;
+			_this.showAddPage= true;
+			_this.showPreviewBtn = true;
+			_this.showDetailPage = false;
+			_this.toIndexPage = false;
+		},
+		reloadAdList(){
+			let _this = this;
+			_this.showAddPage=false;
+			_this.showDetailPage = false;
+			_this.showPreviewBtn = false;
+			_this.showEditPage = false;
+			_this.toIndexPage = true;//用于控制新增也表单重置
+			// console.log("更新列表数据")
+			_this.getAdList();
+		},
+		reload(){
+			let _this = this;
+			_this.showAddPage=false;
+			_this.showDetailPage = false;
+			_this.showPreviewBtn = false;
+			_this.showEditPage = false;
+			// console.log("更新列表数据")
+			_this.getAdList();
+		},
+		getAdList:function(){//获取广告列表
+			let _this = this;
+			let param = {
+					"param": {
+						"advertisName": _this.advertisName,
+						"OnlineState":_this.OnlineState,
+						'pageIndex':_this.pageIndex,
+						'pageSize':_this.pageSize
+					}
+				};
+
+			_this.$api.vkcPost("supermarketloan/mgr/advertisemen/advertisementlist", param, res => {
+				console.log(res);
+				if (!_this.judgeDataIsNull(res)) {
+					if (res.code == '0' || res.code == 0 ) {
+						_this.totalCount = res.totalCount;
+						_this.adList = res.data;
+					}else{
+						this.$message.error(res.msg);
+					}
+				}
+			},'all');
+		},
+		searchAd(){
+			this.getAdList();
+		},
+		setADState:function(ad){//设置广告上下线
+			let _this = this;
+			let param = {
+					"param": {
+						"id": ad.id,
+						"OnlineState":ad.onlineState
+					}
+				};
+			this.$api.vkcPost("supermarketloan/mgr/advertisemen/advertisementupanddown", param, res => {
+				if (!_this.judgeDataIsNull(res)) {
+					if (res.code == "0" || res.code == 0) {
+						ad.onlineState == '0' ? ad.onlineState='1':ad.onlineState='0';
+						this.$message({
+                                message: res.msg,
+                                type: "success"
+                            });
+					}else{
+						this.$message.error(res.msg);
+					}
+				}
+			},'all');
+		},
+		deleteAd:function(adId){
+			let _this = this;
+			let param = {
+				"param":{
+					"id":adId
+				}
+			};
+			_this.$api.vkcPost("supermarketloan/mgr/advertisemen/deladvertisementdata",param,res =>{
+				if (!_this.judgeDataIsNull(res)) {
+					if (res.code == "0" || res.code == 0) {
+						this.$message({
+                                message: res.msg,
+                                type: "success"
+                            });
+
+						if (_this.adList != null && _this.adList.length > 0) {
+							for (let i = 0; i < _this.adList.length; i++) {
+								let ad = _this.adList[i];
+
+								if (adId == ad.id) {
+									_this.adList.splice(i, 1);
+								}
+							}
+						}
+					}else{
+						this.$message.error(res.msg);
+					}
+				}
+
+			},'all');
+		},
+		confirmDeleteAd(adId) {
+			this.$confirm('确定要删除该条广告吗？', '提示', {
+				confirmButtonText: '确定',
+				cancelButtonText: '取消',
+				type: 'warning'
+			}).then(() => {
+				this.deleteAd(adId);
+			}).catch(() => {
+				// this.$message({
+				// 	type: 'info',
+				// 	message: '已取消删除'
+				// });
+			});
+		},
+		adDetail:function(ad){
+			let _this = this;
+			_this.showDetailPage = true;
+			_this.showAddPage = false;
+			_this.showPreviewBtn = true;
+			_this.showEditPage = false;
+console.log(ad);
+			_this.advertInfo = ad;
+			_this.advertInfo.toIndexPage = false;
+			// console.log("传递的对象："+ad.tagName);
+			let positionArr = [];
+			// for (let i = 0 ;i< _this.adPositionList.length; i++) {
+			// 	let position = _this.adPositionList[i];
+
+			// 	console.log("点击广告的位置："+_this.advertInfo.positionType);
+			// 	if (position.positionType == _this.advertInfo.positionType) {
+			// 		let positionObj = {};
+			// 		positionType.positionType = positionType;
+			// 		positionArr.push(positionObj);
+			// 	}
+			// }
+			let posObj = {};
+			posObj.positionType = ad.positionType;
+			posObj.positionTypeChinese = ad.positionTypeChinese;
+			positionArr.push(posObj);
+			_this.advertInfo.positionList = positionArr;
+			// console.log("广告图片地址："+_this.advertInfo.logo+"，链接地址："+_this.advertInfo.linkUrl);
+
+
+		},
+		judgeEditPageNeedReset(modified){
+			// console.log("需要重置编辑页面么？"+modified);
+			this.isEditPageNeedReset = modified;
+		},
+		editAdvertisement:function(ad){
+			let _this = this;
+			_this.showAddPage= false;
+			_this.showPreviewBtn = true;
+			_this.showDetailPage = false;
+			_this.showEditPage = true;
+
+			// console.log("要编辑的广告：主题："+ad.tagName+"，位置"+ad.positionType+"，ad.");
+			_this.advertisment = ad;
+
+			_this.advertisment.adPosition = _this.adPositionList.slice(1,_this.adPositionList.length);
+			console.log(_this.advertisment.adPosition);
+			_this.advertisment.resetPage = _this.isEditPageNeedReset;
+			console.log("_this.isEditPageNeedReset>>>>>>>>"+_this.isEditPageNeedReset)
+
+			_this.advertisment.selectedProductId = '';
+			_this.advertisment.selectedPage = '';
+			_this.advertisment.pageParam = '';
+			if (ad.actionType == "") {
+				_this.advertisment.selectedProductId = '';
+				_this.advertisment.selectedPage = '';
+				_this.advertisment.pageParam = '';
+			}else if (ad.actionType == "loanproductinfo") {
+				// let jsonObj = JSON.parse(ad.actionParam);
+				// _this.advertisment.selectedProductId = jsonObj.productId;
+			}else{
+				_this.advertisment.selectedPage = ad.actionType;
+				_this.advertisment.pageParam = ad.actionParam;
+			}
+
+		}
+
+	},
+	created(){
+		let _this = this;
+		_this.getAdList();
+		_this.getAdPositionList();
+		_this.getOnlineState();
+	}
+
+}
+</script>
+
+<style scoped>
+.block {
+	float: right;
+	padding-top: 25px;
+}
+.upline {
+	padding-left: 10px
+}
+.weight{
+	margin-top: 7px;
+}
+</style>

@@ -1,0 +1,54 @@
+<template>
+  <el-select v-model="model" placeholder="请选择" class="width200" @change="select" clearable filterable>
+    <el-option :label="firstLabel" value=""></el-option>
+    <el-option v-for="item in servicerList" :label="item.userName" :value="item.id" :key="item.id"></el-option>
+  </el-select>
+</template>
+
+<script>
+  /*
+  客服列表组件
+  props{
+      value: 绑定的值,
+      firstLabel: 第一项名称  选中值value为空
+  }
+  change 选中值发生变化时触发 回调参数(目前的选中值)
+
+  使用例子：    <jb-customerService v-model="noteName" @change="selectService"></jb-customerService>
+  */
+  import {mapGetters, mapActions} from "vuex";
+
+  export default {
+    name: "jb-customerService",
+    props: {
+      value: {
+        type: String,
+        default: ""
+      },
+      firstLabel: {
+        type: String,
+        default: "全部"
+      }
+    },
+    computed: {
+      model: {
+        get() {
+          return this.value;
+        },
+        set(val) {
+          this.$emit("input", val);
+        }
+      },
+      ...mapGetters(["servicerList"])
+    },
+    methods: {
+      select(val) {
+        this.$emit("change", val);
+      },
+      ...mapActions(["getServicerList"])
+    },
+    created() {
+      this.getServicerList();
+    }
+  };
+</script>

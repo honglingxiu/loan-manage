@@ -1,0 +1,127 @@
+<template>
+    <div>
+        <el-form :model="formData" :inline="true">
+            <el-form-item label="模板名称：">
+                <el-input v-model="formData.templateName" placeholder="请输入角色名称" class="width200"></el-input>
+            </el-form-item>
+            <el-form-item label="模板类型：">
+                <el-select v-model="formData.templateType" placeholder="请选择" class="width200">
+                    <el-option label="全部" value=""></el-option>
+                    <el-option label="短信营销" value="1"></el-option>
+                    <el-option label="外呼中心" value="2"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="状态：">
+                <el-select v-model="formData.select2" placeholder="请选择" class="width200">
+                    <el-option label="全部" value=""></el-option>
+                    <el-option label="使用中" value="1"></el-option>
+                    <el-option label="已禁用" value="2"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="getList()">查询</el-button>
+                <el-button type="primary" @click="$emit('setTemplate')">新增模板</el-button>
+            </el-form-item>
+        </el-form>
+        <el-table :data="templateList" stripe border>
+            <el-table-column prop="templateName" label="模板名称"></el-table-column>
+            <el-table-column prop="message" label="模板内容"></el-table-column>
+            <el-table-column label="模板类型">
+                <template slot-scope="scope">
+                    <span>{{scope.row.templateType==='1'?'短信营销':'呼叫中心'}}</span>
+                </template>
+
+            </el-table-column>
+            <el-table-column label="当前状态">
+                <template slot-scope="scope">
+                    <span :style="scope.row.onlineState==='1'?{color:'red'}:''">{{scope.row.onlineState==='0'?'使用中':'已禁用'}}</span>
+                </template>
+            </el-table-column>
+            <el-table-column label="操作">
+                <template slot-scope="scope">
+                    <el-button type="text" @click="$emit('setTemplate',scope.row)">编辑</el-button>
+                    <el-button type="text" @click="confirmChangeState(scope.row)">{{scope.row.onlineState==='0'?'禁用':'启用'}}</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <div class="pull-right mg-t20">
+            <el-pagination @current-change="handleCurrentChange" @size-change="handleSizeChange" :current-page="formData.pageIndex" :page-sizes="[10, 20, 50, 100]" :page-size="formData.pageSize" layout="total, sizes, prev, pager, next, jumper" :total="totalCount"></el-pagination>
+        </div>
+    </div>
+</template>
+<script>
+export default {
+    data() {
+        return {
+            totalCount: 0,
+            roleName: "",
+            formData: {
+                pageIndex: 1,
+                pageSize: 10,
+                templateName: "",
+                templateType: "",
+                select2: ""
+            },
+            templateList: []
+        };
+    },
+    methods: {
+        getList() {
+            this.formData.pageIndex = 1;
+            this.getTemplateList();
+        },
+        handleCurrentChange(val) {
+            this.formData.pageIndex = val;
+            this.getTemplateList();
+        },
+        handleSizeChange(val) {
+            this.formData.pageSize = val;
+            this.formData.pageIndex = 1;
+            this.getTemplateList();
+        },
+        getTemplateList() {
+            this.$api.vkcPost2(
+                "supermarketloan/crm/sms/PageSmsTemplateList",
+                this.formData,
+                res => {
+                    this.totalCount = res.totalCount;
+                    this.templateList = res.data;
+                },
+                "getallData"
+            );
+        },
+        confirmChangeState(row) {
+            let keyMsg = row.onlineState == "0" ? "启用" : "禁用";
+            let hintMsg = "确定" + keyMsg + "？";
+            this.$confirm(hintMsg, "提示", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                type: "warning"
+            })
+                .then(() => {
+                    this.changeWidgetState(row);
+                })
+                .catch(() => {});
+        },
+        changeWidgetState(row) {
+            let param = {
+                id: row.id,
+                onlineState: row.onlineState === "0" ? "1" : "0"
+            };
+            this.$api.vkcPost2("supermarketloan/crm/updateSMSTemplate", param, res => {
+                if (res) {
+                    this.$message({
+                        message: "修改成功",
+                        type: "success",
+                        duration: 1000
+                    });
+                    row.onlineState === "0" ? (row.onlineState = "1") : (row.onlineState = "0");
+                }
+            });
+        }
+    },
+    created() {
+        this.getTemplateList();
+    }
+};
+</script>

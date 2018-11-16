@@ -1,0 +1,176 @@
+<template>
+    <div>
+        <div class="flex align-middle space-between">
+            <div>
+                <label>规则名称：</label>
+                <strong>{{selectRow.ruleName}}</strong>
+                <label class="mg-l20">总分值：</label>
+                <strong>{{selectRow.score}}</strong>
+            </div>
+            <el-button type="primary" @click="setItem()">新增项次</el-button>
+        </div>
+
+        <el-table :data="rulesItems" stripe border class="mg-t20">
+            <el-table-column type="index" width="50" :index="$api.IndexMethod(pageIndex,pageSize)" label="序号"></el-table-column>
+            <el-table-column prop="itemContent" label="项次内容"></el-table-column>
+            <el-table-column prop="itemScore" label="分值"></el-table-column>
+            <el-table-column prop="description" label="内容说明"></el-table-column>
+            <el-table-column label="操作">
+                <template slot-scope="scope">
+                    <el-button type="text" @click="setItem(scope.row)">编辑</el-button>
+                    <el-button type="text" @click="confirmDel(scope.row,scope.$index)">删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <div class="mg15 mg-r0 pull-right" v-show="totalCount>0">
+            <jb-pagination @getList="getRulesItemsList" :totalCount="totalCount"></jb-pagination>
+        </div>
+
+        <el-dialog :title="title" :visible.sync="dialogVisible" width="600px">
+            <el-form :model="dialogForm" label-width="100px" :rules="rules" ref="itemsForm">
+                <el-form-item label="项次名称：" prop="itemContent">
+                    <el-input v-model.trim="dialogForm.itemContent" placeholder="请输入项次名称" class="width300"></el-input>
+                </el-form-item>
+                <el-form-item label="分值：" prop="itemScore">
+                    <el-input type="number" v-model.trim="dialogForm.itemScore" placeholder="请输入分值" class="width300"></el-input>
+                </el-form-item>
+                <el-form-item label="内容说明：" prop="description">
+                    <el-input type="textarea" v-model.trim="dialogForm.description" placeholder="请输入内容说明" :rows="6"></el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="text-center">
+                <el-button @click="dialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="confirm()">确 定</el-button>
+            </div>
+        </el-dialog>
+    </div>
+</template>
+<script>
+export default {
+    props: {
+        selectRow: Object
+    },
+    data() {
+        return {
+            dialogVisible: false,
+            roleName: "",
+            dialogType: "add",
+            dialogForm: {},
+            rulesItems: [],
+            rules: {
+                itemContent: [{ required: true, message: "请输入项次名称", trigger: "blur" }],
+                itemScore: [{ required: true, message: "请输入分值", trigger: "blur" }],
+                description: [{ required: true, message: "请输入内容说明", trigger: "blur" }]
+            },
+            totalCount: 0,
+            pageIndex: 1,
+            pageSize: 10
+        };
+    },
+    computed: {
+        title() {
+            return this.dialogType === "add" ? "新增项次" : "编辑项次";
+        }
+    },
+    methods: {
+        setItem(row) {
+            this.dialogForm = {};
+            if (row) {
+                this.dialogForm = { ...row };
+                this.dialogType = "edit";
+            } else {
+                this.dialogType = "add";
+            }
+            if (this.$refs.itemsForm) {
+                this.$refs.itemsForm.clearValidate();
+            }
+            this.dialogVisible = true;
+        },
+        submitItems() {
+            let url = "";
+            url = this.dialogType === "add" ? "supermarketloan/crm/qualitycontrol/addRulesItems" : "supermarketloan/crm/qualitycontrol/updateRulesItems";
+            let param = {
+                qualityControlRuleId: this.selectRow.id, //新增传
+                qualityControlItemId: this.dialogForm.id || "", //编辑传
+                itemContent: this.dialogForm.itemContent,
+                itemScore: this.dialogForm.itemScore,
+                description: this.dialogForm.description
+            };
+            this.$api.vkcPost2(
+                url,
+                param,
+                res => {
+                    if (res) {
+                        this.getRulesItems().then(res => {
+                            this.$message({
+                                message: this.dialogType === "add" ? "添加成功！" : "修改成功！",
+                                type: "success",
+                                duration: 1000
+                            });
+                            this.dialogVisible = false;
+                        });
+                    }
+                },
+                "getAllData"
+            );
+        },
+        delItems(id) {
+            return new Promise((resolve, reject) => {
+                this.$api.vkcPost2("supermarketloan/crm/qualitycontrol/delRulesItems", { qualityControlItemId: id }, res => {
+                    resolve(res);
+                });
+            });
+        },
+        confirm() {
+            this.$refs.itemsForm.validate(valid => {
+                if (valid) {
+                    this.submitItems();
+                } else {
+                    console.log("error submit!!");
+                    return false;
+                }
+            });
+        },
+        confirmDel(row, index) {
+            this.$confirm(`确定删除 “${row.itemContent}” 这个项次吗 ？`, "删除项次", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                type: "warning"
+            })
+                .then(() => {
+                    this.delItems(row.id).then(res => {
+                        this.$message({
+                            message: "删除成功！",
+                            type: "success",
+                            duration: 1000
+                        });
+                        this.rulesItems.splice(index, 1);
+                    });
+                })
+                .catch(() => {});
+        },
+        getRulesItems(id) {
+            let param = {
+                qualityControlRuleId: id || this.selectRow.id
+            };
+            return new Promise((resolve, reject) => {
+                this.$api.vkcPost2(
+                    "supermarketloan/crm/qualitycontrol/findRulesItems",
+                    param,
+                    res => {
+                        this.rulesItems = res.data;
+                        this.totalCount = res.totalCount;
+                        resolve(res.data);
+                    },
+                    "getAllData"
+                );
+            });
+        },
+        getRulesItemsList(pageIndex, pageSize) {
+            this.pageIndex = pageIndex || this.pageIndex;
+            this.pageSize = pageSize || this.pageSize;
+            this.getRulesItems(this.selectRow.id);
+        }
+    }
+};
+</script>

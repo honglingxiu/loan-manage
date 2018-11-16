@@ -1,0 +1,75 @@
+<template>
+    <div>
+        <div v-for="(item,key) in rankDetail" :key="item.productId">
+            <p>产品名称：{{item.productName}}</p>
+            <el-table :data="item.itemData" stripe width="100%" border class="mg-t15">
+                <el-table-column prop="amountRange" label="金额范围" align="center"></el-table-column>
+                <el-table-column prop="rank" label="当前排名" align="center"></el-table-column>
+                <el-table-column prop="bidAmount" label="当前价格（元）" align="center">
+                    <template slot-scope="scope">
+                        <span v-if="scope.row.bidAmount!==''" class="lh30">{{scope.row.bidAmount}}</span>
+                        <el-button type="primary" size="small" v-if="scope.row.bidAmount!==''" @click="revisePrice(scope.row,key)" class="pull-right">修改价格</el-button>
+                        <el-button type="primary" size="small" v-else @click="openPrice(scope.row,key)" class="pull-right">开通竞价</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
+    </div>
+</template>
+
+<script>
+export default {
+    data() {
+        return {
+            rankInfo: "",
+            rankDetail:[]
+        };
+    },
+    methods: {
+        revisePrice(row, key) {
+            let param = {
+                param: {
+                    eventMarketId: this.rankInfo.eventMarketId,
+                    productId: this.rankDetail[key].productId,
+                    minAmount: row.minAmount,
+                    maxAmount: row.maxAmount,
+                    amountRange: row.amountRange,
+                    productName: this.rankDetail[key].productName,
+                    rank: row.rank,
+                    bidAmount: row.bidAmount,
+                    formId: row.formId
+                }
+            };
+            this.$store.commit("GET_RANK_ROW", param);
+            this.$router.push("rankEdit");
+        },
+        openPrice(row, key) {
+            row.bidAmount = '0';
+            let param = {
+                param: {
+                    eventMarketId: this.rankInfo.eventMarketId,
+                    productId: this.rankDetail[key].productId,
+                    formId: row.formId,
+                    minAmount: row.minAmount,
+                    maxAmount: row.maxAmount,
+                    bidAmount: row.bidAmount
+                }
+            };
+            this.$api.vkcPost("supermarketloan/mgr/eventmarket/bidranking/submiteditdetail", param, res => {
+                this.revisePrice(row, key);
+            },'all');
+        },
+        getRankDetail() {
+            this.$api.vkcPost("supermarketloan/mgr/eventmarket/bidranking/detail", { param: this.rankInfo }, res => {
+                this.rankDetail = res;
+            });
+        }
+    },
+    created() {
+        this.$store.commit("CHANGE_TITLE", []);
+        this.rankInfo = this.$api.getSStorage("rankInfo", true);
+        if (!this.rankInfo) this.$router.replace("/");
+        this.getRankDetail();
+    }
+};
+</script>

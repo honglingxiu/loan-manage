@@ -1,0 +1,44 @@
+<template>
+    <div>
+        <ul class="flex space-around align-middle col-7 common-font">
+            <li>用户号码：<span>{{userPhone.phone}}</span></li>
+            <li>
+                <el-button type="primary" :disabled="userPhone.disabled">一键拨打</el-button>
+            </li>
+        </ul>
+        <ul class="flex align-middle col-5 common-font">
+            <p class="pd-l20">认领线索即可拥有{{userPhone.callTimes}}次拨打次数</p>
+        </ul>
+    </div>
+</template>
+
+<script>
+    export default {
+        props: {
+            userPhone:Object
+        },
+        data() {
+            return {
+            };
+        },
+        methods: {
+
+        },
+        created() {
+        }
+    };
+</script>
+<style scoped>
+    ul {
+        height: 120px;
+
+    }
+
+    ul:first-child {
+        border-right: 1px solid #cccccc;
+    }
+
+    ul li {
+        display: inline-block;
+    }
+</style>

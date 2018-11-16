@@ -1,0 +1,237 @@
+<template>
+  <div>
+    <el-form :model="mySelectRow" ref="formData" :rules="rules" label-width="100px">
+      <!-- <el-form-item label="账号ID：">
+           {{mySelectRow.id}}
+       </el-form-item>-->
+      <el-form-item label="账号ID：" prop="roleId">
+        <el-input v-model="mySelectRow.id" disabled v-if="$parent.currentView.includes('setCustomerAccount')"
+                  placeholder="无需输入，新增后自动生成" class="width300"></el-input>
+        <span v-else>{{mySelectRow.id}}</span>
+      </el-form-item>
+      <el-form-item label="账号名称：" prop="userName">
+        <el-input v-model="mySelectRow.userName" class="width300"></el-input>
+      </el-form-item>
+      <el-form-item label="备注名：" prop="noteName">
+        <el-input type="text" v-model="mySelectRow.noteName" auto-complete="off" class="width300"></el-input>
+      </el-form-item>
+      <el-form-item label="公司名称：" prop="customerName">
+        <el-select v-model="mySelectRow.customerName" clearable placeholder="请选择" filterable class="width300">
+          <el-option v-for="item in customerNameList"
+                     :label="item.customerName"
+                     :value="item.customerName"
+                     :key="item.channelCode"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="账号密码：" prop="passWord">
+        <el-input type="password" v-model="mySelectRow.passWord" auto-complete="off" class="width300"></el-input>
+      </el-form-item>
+      <el-form-item label="行业类型：" prop="customerType">
+        <el-select v-model="mySelectRow.customerType" placeholder="请选择" filterable class="width300">
+          <el-option v-for="(item,key) of professionTypes" :label="item.label" :value="item.value"
+                     :key="key"></el-option>
+        </el-select>
+      </el-form-item>
+
+      <el-form-item label="显示字段：">
+        <el-button @click="$refs.fieldInfo.openDialog()" type="primary">配置</el-button>
+        <ul class="act-tags clearfix bgccc mg-t20" v-show="fieldList.length>0">
+          <li v-for="item in fieldList" :key="item.id" class="active lh30 mg-b10">{{item.metaDesc}}</li>
+        </ul>
+      </el-form-item>
+
+    </el-form>
+    <div class="mg15 text-center">
+      <el-button @click="$parent.currentView='customerAccountList'">取消</el-button>
+      <el-button type="primary" :loading="loading" @click="save()">保存</el-button>
+    </div>
+
+    <jb-fieldInfo v-model="fieldList" title="配置显示字段" ref="fieldInfo" :oldFieldList="oldFieldList"></jb-fieldInfo>
+
+  </div>
+</template>
+<script>
+  export default {
+    props: {
+      selectRow: Object,
+      customerNameList: Array,
+    },
+    data() {
+      var _this = this;
+      var checkUserName = function (rule, value, callback) {
+        //校验账号唯一性
+        if (!value) {
+          return callback(new Error('账号名不能为空'));
+        }
+        _this.$api.vkcPost2("supermarketloan/crm/auth/sysaccount/checkAccount", {
+          id: _this.selectRow.id || "",
+          userName: value,
+        }, res => {
+          callback();
+        }, "getAllData");
+
+      };
+      return {
+        mySelectRow: {},
+        professionTypes: [
+          {
+            value: "1",
+            label: "IT服务",
+          },
+          {
+            value: "2",
+            label: "制造业",
+          },
+          {
+            value: "3",
+            label: "批发/零售",
+          },
+          {
+            value: "4",
+            label: "生活服务",
+          },
+          {
+            value: "5",
+            label: "文化/体育/娱乐",
+          },
+          {
+            value: "6",
+            label: "建筑/房地产",
+          }, {
+            value: "7",
+            label: "教育",
+          },
+          {
+            value: "8",
+            label: "运输/物流/仓储",
+          },
+          {
+            value: "9",
+            label: "医疗",
+          },
+          {
+            value: "10",
+            label: "政府",
+          },
+          {
+            value: "11",
+            label: "金融",
+          },
+          {
+            value: "12",
+            label: "能源/采矿",
+          },
+          {
+            value: "13",
+            label: "农林渔牧",
+          },
+          {
+            value: "14",
+            label: "其他",
+          }
+        ],
+        oldFieldList: [],
+        fieldList: [],
+        loading: false,
+        rules: {
+          userName: [
+            {
+              validator: checkUserName,
+              trigger: 'blur',
+              required: true
+            }
+          ],
+          noteName: [{required: true, message: "请输入备注名", trigger: "blur"}],
+          customerName: [{required: true, message: "请选择公司名称", trigger: "blur"}],
+          passWord: [{required: true, message: "请输入账号密码", trigger: "blur"}]
+          /*customerType: [{required: true, message: "请选择行业类型", trigger: "blur"}]*/
+        }
+      };
+    },
+    computed: {
+      param() {
+        return {
+          id: this.mySelectRow.id,
+          userName: this.mySelectRow.userName,
+          noteName: this.mySelectRow.noteName,
+          passWord: this.mySelectRow.passWord,
+          customerName: this.mySelectRow.customerName,
+          customerType: this.mySelectRow.customerType,
+          metaItems: this.metaItems
+        };
+      },
+      metaItems() {
+        var metaItems = [];
+        this.fieldList.forEach(function (item) {
+          metaItems.push(item.id);
+        });
+        return metaItems;
+      }
+    },
+    methods: {
+      clearValidate() {
+        this.$refs.formData.clearValidate();
+      },
+      save() {
+        if (this.selectRow.id) {
+          this.$refs.formData.validate(valid => {
+            if (valid) {
+              this.loading = true;
+              this.$api.vkcPost2(
+                "supermarketloan/crm/auth/customeraccount/update",
+                this.param,
+                res => {
+                  this.loading = false;
+                  this.$parent.goBackToCustomerAccounList();
+                }
+              );
+            } else {
+              return false;
+            }
+          });
+        } else {
+          this.$refs.formData.validate(valid => {
+            if (valid) {
+              this.loading = true;
+              this.$api.vkcPost2("supermarketloan/crm/auth/customeraccount/add", {
+                userName: this.mySelectRow.userName,
+                noteName: this.mySelectRow.noteName,
+                passWord: this.mySelectRow.passWord,
+                customerName: this.mySelectRow.customerName,
+                customerType: this.mySelectRow.customerType,
+                metaItems: this.metaItems
+              }, res => {
+                this.loading = false;
+                this.$parent.goBackToCustomerAccounList();
+              });
+            } else {
+              return false;
+            }
+          });
+        }
+      }
+    },
+    watch: {
+      fieldList: function () {
+        this.oldFieldList = this.fieldList;
+      }
+    },
+    created() {
+      if (this.selectRow.id) {
+        //编辑账号
+        this.$api.vkcPost2(
+          "supermarketloan/crm/auth/customeraccount/queryAccountById",
+          {
+            id: this.selectRow.id
+          },
+          res => {
+            this.mySelectRow = res;
+            this.mySelectRow.passWord="";
+            this.oldFieldList = this.mySelectRow.metaItems;
+            this.fieldList = this.mySelectRow.metaItems;
+          }
+        );
+      }
+    }
+  };
+</script>

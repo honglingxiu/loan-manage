@@ -1,0 +1,80 @@
+<template>
+    <div class="clearfix breadcrumb">
+        <span class="font">当前位置：活动管理 > 活动列表{{breadcrumb}}</span>
+        <el-button type="primary" class="back" @click="$router.back()" v-show="$route.path!=='/activityList'">返回上一页</el-button>
+        <span class="pull-right" style="margin-right: 100px" v-html="headerTitle"></span>
+    </div>
+</template>
+
+<script>
+import { mapGetters } from "vuex";
+export default {
+    data() {
+        return {
+            breadcrumb: ""
+        };
+    },
+    watch: {
+        $route(to, from) {
+            this.getBreadcrumb(to.path);
+        }
+    },
+    computed: {
+        ...mapGetters(["headerTitle"])
+    },
+    methods: {
+        getBreadcrumb(route) {
+            switch (route) {
+                case "/activityList":
+                    this.breadcrumb = "";
+                    this.$store.commit("CHANGE_TITLE", []);
+                    break;
+                case "/activityList/addActivity":
+                    this.breadcrumb = " > 创建活动";
+                    this.$store.commit("CHANGE_TITLE", []);
+                    break;
+                case "/activityList/editActivity":
+                    this.breadcrumb = " > 编辑活动";
+                    break;
+                case "/activityList/channel":
+                    this.breadcrumb = " > 渠道设置";
+                    break;
+                case "/activityList/channel/setChannel/edit":
+                    this.breadcrumb = " > 渠道设置 > 编辑渠道";
+                    break;
+                case "/activityList/channel/setChannel/add":
+                    this.breadcrumb = " > 渠道设置 > 新建渠道";
+                    break;
+                case "/activityList/ranking":
+                    this.breadcrumb = " > 排名竞价";
+                    break;
+                case "/activityList/ranking/rankDetail":
+                    this.breadcrumb = " > 排名竞价 > 详情";
+                    break;
+                case "/activityList/ranking/rankEdit":
+                    this.breadcrumb = " > 排名竞价 > 详情 > 编辑";
+                    break;
+                case "/activityList/setAmount":
+                    this.breadcrumb = " > 金额设置";
+                    break;
+                case "/activityList/setAmount/productRink":
+                    this.breadcrumb = " > 金额设置 > 产品排名";
+                    break;
+                case "/activityList/setAmount/amount/add":
+                    this.breadcrumb = " > 金额设置 > 新增";
+                    break;
+                case "/activityList/setAmount/amount/edit":
+                    this.breadcrumb = " > 金额设置 > 编辑";
+                    break;
+                default:
+                    this.breadcrumb = "";
+                    this.$store.commit("CHANGE_TITLE", []);
+                    break;
+            }
+        }
+    },
+    created() {
+        this.getBreadcrumb(this.$route.path);
+    }
+};
+</script>

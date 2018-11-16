@@ -1,0 +1,194 @@
+<template>
+    <div class="sidebar">
+        <el-menu :default-active="onRoutes" class="el-menu-vertical-demo" unique-opened router background-color="#324157" text-color="#bbc9da" active-text-color="#20a0ff">
+            <template v-for="item in items">
+                <template v-if="item.subs">
+                    <el-submenu :index="item.index" :key="item.index">
+                        <template slot="title">
+                            <i :class="item.icon"></i>{{ item.title }}</template>
+                        <el-menu-item v-for="(subItem,i) in item.subs" :key="i" :index="subItem.index">{{ subItem.title }}</el-menu-item>
+                    </el-submenu>
+                </template>
+                <template v-else>
+                    <el-menu-item :index="item.index" :key="item.index">
+                        <i :class="item.icon"></i>{{ item.title }}
+                    </el-menu-item>
+                </template>
+            </template>
+        </el-menu>
+    </div>
+</template>
+
+<script>
+export default {
+    data() {
+        return {
+            items: []
+        };
+    },
+    computed: {
+        onRoutes() {
+            return "/" + this.$route.path.split("/")[1];
+        }
+    },
+    methods: {
+        getMenu(id) {
+            let crmMenus = {
+                "20": () =>
+                    this.items.push({
+                        index: "/rights",
+                        title: "权限管理",
+                        subs: [
+                            {
+                                index: "/role",
+                                title: "角色管理"
+                            },
+                            {
+                                index: "/account",
+                                title: "账号管理"
+                            },
+                            {
+                                index: "/customerAccount",
+                                title: "客户账号"
+                            }
+                        ]
+                    }),
+                "1": () => this.items.push({ index: "/ad", title: "广告管理" }),
+                "2": () => this.items.push({ index: "/recommend", title: "推荐管理" }),
+                "3": () => this.items.push({ index: "/product", title: "产品管理" }),
+                "4": () => this.items.push({ index: "/applyRecord", title: "申请记录" }),
+                "5": () =>
+                    this.items.push({
+                        index: "/submitRecord",
+                        title: "提交记录",
+                        subs: [
+                            {
+                                index: "/submitCustomer",
+                                title: "提交客户"
+                            },
+                            {
+                                index: "/submitCustomerService",
+                                title: "提交客服"
+                            }
+                        ]
+                    }),
+                "6": () => this.items.push({ index: "/message", title: "消息管理" }),
+                "7": () => this.items.push({ index: "/suggest", title: "建议管理" }),
+                "8": () =>
+                    this.items.push({
+                        index: "/activity",
+                        title: "活动管理",
+                        subs: [
+                            {
+                                index: "/activityList",
+                                title: "活动列表"
+                            },
+                            {
+                                index: "/activityForm",
+                                title: "表单控件"
+                            },
+                            {
+                                index: "/activityRecord",
+                                title: "申请记录"
+                            }
+                        ]
+                    }),
+                "9": () => this.items.push({ index: "/user", title: "用户管理" }),
+                "10": () => this.items.push({ index: "/order", title: "订单管理" }),
+                "12": () => this.items.push({ index: "/customer", title: "客户管理" }),
+                "11": () =>
+                    this.items.push({
+                        index: "/sms",
+                        title: "短信管理",
+                        subs: [
+                            {
+                                index: "/smsList",
+                                title: "短信列表"
+                            },
+                            {
+                                index: "/smsTemplate",
+                                title: "短信模板"
+                            }
+                        ]
+                    }),
+                "13": () => this.items.push({ index: "/workList", title: "工单管理" }),
+                "21": () => this.items.push({ index: "/business", title: "业务管理" }),
+                "16": () => this.items.push({ index: "/rules", title: "规则管理" }),
+                "17": () => this.items.push({ index: "/soundRecord", title: "录音质检" }),
+                "19": () =>
+                    this.items.push({
+                        index: "/cluemgr",
+                        title: "线索管理",
+                        subs: [
+                            {
+                                index: "/clue",
+                                title: "线索公海"
+                            },
+                            {
+                                index: "/myClue",
+                                title: "我的线索"
+                            }
+                        ]
+                    }),
+                "14": () => this.items.push({ index: "/customerServiceManagement", title: "客服管理" }),
+                "15": () => this.items.push({ index: "/smsRecord", title: "短信记录" }),
+                "18": () => this.items.push({ index: "/workHandle", title: "工单处理" }),
+                default: ""
+            };
+            crmMenus[id] ? crmMenus[id]() : crmMenus["default"];
+        }
+    },
+    created() {
+        let userInfo = this.$api.getLStorage("loanuser", "decode");
+        if (userInfo) {
+            if (userInfo.userType !== "customerManage" && userInfo.userType !== "customerSuperior") {
+                this.items.push({ index: "/home", title: "首页" });
+            }
+            userInfo.crmMenus.forEach(v => {
+                this.getMenu(v.id);
+            });
+            this.$watch(
+                "$route",
+                (to, from) => {
+                    if (to.path === "/changeInfo") return;
+                    for (const iterator of this.items) {
+                        if (iterator.subs) {
+                            for (const subItem of iterator.subs) {
+                                if (to.path.includes(subItem.index)) {
+                                    return;
+                                }
+                            }
+                        }
+                        if (to.path.includes(iterator.index)) {
+                            return;
+                        }
+                    }
+                    this.$router.push("/login");
+                },
+                { immediate: true }
+            );
+        } else {
+            this.$router.push("/login");
+        }
+    }
+};
+</script>
+
+<style scoped>
+.sidebar {
+    display: block;
+    position: absolute;
+    width: 220px;
+    left: 0;
+    top: 70px;
+    bottom: 0;
+    -ms-overflow-style: none;
+}
+::-webkit-scrollbar {
+    display: none;
+}
+.sidebar > ul {
+    height: 100%;
+    overflow-y: auto;
+}
+</style>

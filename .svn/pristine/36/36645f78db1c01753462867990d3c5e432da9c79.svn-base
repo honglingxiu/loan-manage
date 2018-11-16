@@ -1,0 +1,203 @@
+<template>
+  <div>
+    <fieldset class="fieldset">
+      <legend class="legend">用户信息</legend>
+      <div class="col-6 mg-t5 mg-b10">手机号：{{info.userInfo.Phone}}</div>
+      <div class="col-6 mg-t5 mg-b10">姓名：{{info.userInfo.Name}}</div>
+      <div class="col-6 mg-t5 mg-b10">微信号：{{info.userInfo.WeChat}}</div>
+      <div class="col-6 mg-t5 mg-b10">身份证：{{info.userInfo.IdCard}}</div>
+      <div class="col-6 mg-t5 mg-b10">城市省份：{{info.userInfo.CityProvince}}</div>
+      <div class="col-6 mg-t5 mg-b10">城市市区：{{info.userInfo.CityDowntown}}</div>
+      <div class="col-6 mg-t5 mg-b10">出生年月日：{{info.userInfo.BirthDate}}</div>
+      <div class="col-6 mg-t5 mg-b10">申请来源：{{info.userInfo.Applysources}}</div>
+      <div class="col-6 mg-t5 mg-b10">性别：{{info.userInfo.Sex}}</div>
+      <div class="col-6 mg-t5 mg-b10">邮箱：{{info.userInfo.Mail}}</div>
+      <div class="col-6 mg-t5 mg-b10">年龄：{{info.userInfo.Age}}</div>
+      <div class="col-6 mg-t5 mg-b10">客户实际申请IP：{{info.userInfo.ip}}</div>
+      <div class="col-6 mg-t5 mg-b10">工作所在地：{{info.userInfo.LocationWork}}</div>
+      <div class="col-6 mg-t5 mg-b10">工作：{{info.userInfo.Job}}</div>
+      <div class="col-6 mg-t5 mg-b10">企业类型：{{info.userInfo.EnterpriseType}}</div>
+      <div class="col-6 mg-t5 mg-b10">单位工龄：{{info.userInfo.CompanySeniority}}</div>
+      <div class="col-6 mg-t5 mg-b10">教育程度：{{info.userInfo.EducationLevel}}</div>
+    </fieldset>
+
+    <!--<fieldset class="fieldset" v-if="detailType=='financialLoan'">
+      <legend class="legend">征信信息</legend>
+      <div class="col-6 mg-t5 mg-b10">名下是否有车：{{detailData.automobileAssets}}</div>
+      <div class="col-6 mg-t5 mg-b10">名下房产类型：{{detailData.houseProperty}}</div>
+      <div class="col-6 mg-t5 mg-b10">工资形式：{{detailData.wageForm}}</div>
+      <div class="col-6 mg-t5 mg-b10">月收入（元）：{{detailData.monthlySalary}}</div>
+      <div class="col-6 mg-t5 mg-b10">职业身份：{{detailData.profession}}</div>
+      <div class="col-6 mg-t5 mg-b10">是否有本地社保：{{detailData.socialSecurity}}</div>
+      <div class="col-6 mg-t5 mg-b10">是否有寿险保单：{{detailData.lifeInsurance}}</div>
+      <div class="col-6 mg-t5 mg-b10">是否有信用卡：{{detailData.creditCard}}</div>
+      <div class="col-6 mg-t5 mg-b10">企业类型：{{detailData.enterpriseType}}</div>
+      <div class="col-6 mg-t5 mg-b10">单位工龄：{{detailData.companySeniority}}</div>
+      <div class="col-6 mg-t5 mg-b10">是否有本地公积金：{{detailData.accFund}}</div>
+      <div class="col-6 mg-t5 mg-b10">征信记录：{{detailData.creditRecord}}</div>
+      <div class="col-6 mg-t5 mg-b10">信用情况：{{detailData.creditStatus}}</div>
+      <div class="col-6 mg-t5 mg-b10">教育程度：{{detailData.educationLevel}}</div>
+      <div class="col-6 mg-t5 mg-b10">贷款用途：{{detailData.purpose}}</div>
+      <div class="col-6 mg-t5 mg-b10">工作（有/无）：{{detailData.job}}</div>
+      <div class="col-6 mg-t5 mg-b10">贷款额度：{{detailData.applyAmount}}</div>
+      <div class="col-6 mg-t5 mg-b10">银行代发（是/否）：{{detailData.bankTransfer}}</div>
+      <div class="col-6 mg-t5 mg-b10">贷款期限：{{detailData.applyDeadline}}</div>
+      <div class="col-6 mg-t5 mg-b10">名下是否有房：{{detailData.haveHouseProperty}}</div>
+      <div class="col-6 mg-t5 mg-b10">抵押情况（房产）：{{detailData.houseMortgageStatus}}</div>
+      <div class="col-6 mg-t5 mg-b10">房龄：{{detailData.houseAge}}</div>
+      <div class="col-6 mg-t5 mg-b10">估值（房产）：{{detailData.houseValuation}}</div>
+      <div class="col-6 mg-t5 mg-b10">抵押情况（车产）：{{detailData.carMortgageStatus}}</div>
+      <div class="col-6 mg-t5 mg-b10">估值（车产）：{{detailData.carValuation}}</div>
+    </fieldset>-->
+    <fieldset class="fieldset">
+      <legend class="legend">婚纱摄影</legend>
+      <div class="col-6 mg-t5 mg-b10">计划时间：{{info.wedressInfo.PlanTime}}</div>
+      <div class="col-6 mg-t5 mg-b10">拍摄地点：{{info.wedressInfo.FilmingLocation}}</div>
+      <div class="col-6 mg-t5 mg-b10">拍摄城市：{{info.wedressInfo.FilmingCity}}</div>
+      <div class="col-6 mg-t5 mg-b10">价格预算：{{info.wedressInfo.BudgetPrice}}</div>
+    </fieldset>
+
+    <fieldset class="fieldset" >
+      <legend class="legend">提交记录</legend>
+      <el-tabs type="border-card">
+        <el-tab-pane label="提交给客服">
+          <el-table :data="customerServiceRecord" stripe tooltip-effect='light' border>
+            <el-table-column prop="createDate" label="提交时间" align='center'
+                             :show-overflow-tooltip='true'></el-table-column>
+            <el-table-column prop="taskId" label="任务编号" align='center' :show-overflow-tooltip='true'></el-table-column>
+            <!--<el-table-column prop="jobType" label="工单类型" align='center' :show-overflow-tooltip='true'>
+              <template slot-scope="scope">
+                <span v-if="scope.row.jobType === '0'">确认信息</span>
+                <span v-else>补充信息</span>
+              </template>
+            </el-table-column>-->
+            <el-table-column prop="businessName" label="业务类型" :show-overflow-tooltip='true'>
+            </el-table-column>
+            <el-table-column prop="dealResult" label="处理结果" align='center' :show-overflow-tooltip='true'>
+              <template slot-scope="scope">
+                <span v-if="scope.row.dealResult === '1'" style="color:#409EFF">通过</span>
+                <div v-else-if="scope.row.dealResult === '2'" style="color:red">
+                  <span class="mg-r10">不通过</span>
+                  <el-button type="text" size="mini" @click="checkOpinion(scope.row.remark)">查看处理意见</el-button>
+                </div>
+                <span v-else>待处理</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="dealDate" label="处理时间" align='center'
+                             :show-overflow-tooltip='true'></el-table-column>
+            <el-table-column prop="noteName" label="处理人" align='center' :show-overflow-tooltip='true'></el-table-column>
+            <el-table-column label="查看" align='center'>
+              <template slot-scope="scope">
+                <el-button type="text" @click="$communicate.open({id:scope.row.customerServiceOrderId})">沟通记录
+                </el-button>
+                <el-button type="text"
+                           @click="$viewRemarks.open({id:scope.row.customerServiceOrderId,taskId:scope.row.taskId})">
+                  备注记录
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+        <!--<el-tab-pane label="提交给客户">
+          <el-table :data="customerRecord" stripe tooltip-effect='light' border>
+            <el-table-column prop="createDate" label="提交时间" align='center'
+                             :show-overflow-tooltip='true'></el-table-column>
+            <el-table-column prop="createDate" label="提交方式" align='center' :show-overflow-tooltip='true'>
+              <template slot-scope="scope">
+                <span v-if="scope.row.submitType === '3'">线下</span>
+                <span v-else>API</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="submitType" label="提交类型" align='center' :show-overflow-tooltip='true'>
+              <template slot-scope="scope">
+                <span v-if="scope.row.submitType === '2'">赠险</span>
+                <span v-else>贷款</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="customerName" label="提交客户" align='center'
+                             :show-overflow-tooltip='true'></el-table-column>
+            <el-table-column prop="productName" label="提交产品" align='center'
+                             :show-overflow-tooltip='true'></el-table-column>
+            <el-table-column prop="orderState" label="提交结果" align='center' :show-overflow-tooltip='true'>
+              <template slot-scope="scope">
+                <span>{{orderstate(scope.row.orderState)}}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="remark" label="备注" align='center' :show-overflow-tooltip='true'></el-table-column>
+          </el-table>
+        </el-tab-pane>-->
+      </el-tabs>
+    </fieldset>
+  </div>
+</template>
+
+<script>
+  export default {
+    props: {
+      detailData: {
+        type: Object
+      }
+    },
+    computed:{
+      customerServiceRecord(){
+        return this.detailData.customerServiceRecord;//提交给客服列表
+      },
+      customerRecord(){
+        return this.detailData.customerRecord;//提交给客户列表
+      },
+      info(){
+        var userInfo={};
+        var creditInfo={};
+        var wedressInfo={};
+        if(this.detailData.metaDataInfo.length>0){
+          this.detailData.metaDataInfo.forEach((item)=>{
+            if(item.metaType=="user"){
+              userInfo[item.metaName]=item.value;
+            }else if(item.metaType=="credit"){
+              creditInfo[item.metaName]=item.value;
+            }else if(item.metaType=="wedress"){
+              wedressInfo[item.metaName]=item.value;
+            }else {
+              // console.log(item);
+            }
+          });
+        }
+        return {
+          userInfo:userInfo,
+          creditInfo:creditInfo,
+          wedressInfo:wedressInfo
+        }
+      }
+    },
+    data() {
+      return {};
+    },
+    methods: {
+      checkOpinion(opinion) {
+        // this.$alert(opinion, "查看处理意见", { showClose: false });
+        this.$alert(`<hr style="margin-top:-5px"/> ${opinion}`, "查看处理意见", {
+          showClose: false,
+          dangerouslyUseHTMLString: true
+        });
+      },
+      orderstate(state) {
+        switch (state) {
+          case "-1":
+            return "订单作废";
+          case "0":
+            return "订单生成跟进中";
+          case "1":
+            return "服务协议签约";
+          case "2":
+            return "放款协议签订";
+          case "3":
+            return "提交成功";
+          case "4":
+            return "提交失败";
+          default:
+            return "";
+        }
+      }
+    }
+  };
+</script>

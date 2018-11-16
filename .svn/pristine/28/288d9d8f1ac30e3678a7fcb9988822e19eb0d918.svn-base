@@ -1,0 +1,26 @@
+<template>
+    <div>
+        <jb-breadcrumb @handleBack="currentView='recordList'" v-show="currentView!='recordList'"></jb-breadcrumb>
+        <!-- <div class="clearfix">
+            <el-button type="primary" class="back" @click="currentView='recordList'" v-show="currentView!='recordList'">返回上一页</el-button>
+        </div> -->
+        <component :is="currentView" :detailData='detailData'></component>
+    </div>
+</template>
+
+<script>
+import recordList from "./recordList.vue";
+import orderDetails from "./recordDetails.vue";
+import addRecord from "./addRecord.vue";
+export default {
+    components: {
+        recordList,orderDetails,addRecord
+    },
+    data() {
+        return {
+            currentView: 'recordList',
+            detailData:{}
+        };
+    }
+};
+</script>

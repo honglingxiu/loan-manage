@@ -1,0 +1,127 @@
+<template>
+  <div>
+    <el-form :model="mySelectRow" ref="formData" :rules="rules" label-width="100px">
+      <el-form-item label="账号ID：" v-if="$parent.currentView==='setAccount/edit'">
+        {{mySelectRow.id}}
+      </el-form-item>
+      <el-form-item label="账号名称：" prop="userName">
+        <el-input v-model="mySelectRow.userName" class="width300"></el-input>
+      </el-form-item>
+      <el-form-item label="备注名：" prop="noteName">
+        <el-input type="text" v-model="mySelectRow.noteName" auto-complete="off" class="width300"></el-input>
+      </el-form-item>
+      <el-form-item label="账号密码：" prop="passWord">
+        <el-input type="passWord" v-model="mySelectRow.passWord" auto-complete="off" class="width300"></el-input>
+      </el-form-item>
+      <el-form-item label="选择角色：" prop="userType">
+        <jb-roleList v-model="mySelectRow.userType"></jb-roleList>
+        <!-- <el-select v-model="mySelectRow.userType" placeholder="请选择" class="width200" filterable clearable>
+             <el-option
+                 v-for="item in roleList"
+                 :key="item.id"
+                 :label="item.roleName"
+                 :value="item.userType">
+             </el-option>
+         </el-select>-->
+      </el-form-item>
+
+    </el-form>
+    <div class="mg15 text-center">
+      <el-button @click="$parent.currentView='accountList'">取消</el-button>
+      <el-button type="primary" @click="save()">保存</el-button>
+    </div>
+
+  </div>
+</template>
+<script>
+  export default {
+    props: {
+      selectRow: Object
+    },
+    data() {
+      return {
+        mySelectRow: {},
+        roleList: [],
+        rules: {
+          userName: [
+            {required: true, message: "请输入账号名称", trigger: "blur"}
+          ],
+          noteName: [
+            {required: true, message: "请输入备注名", trigger: "blur"}
+          ],
+          passWord: [
+            {required: true, message: "请输入账号密码", trigger: "blur"}
+          ],
+          userType: [
+            {required: true, message: "请选择角色名称", trigger: "blur"}
+          ]
+        }
+      };
+    },
+    computed: {
+      param() {
+        return {
+          id: this.mySelectRow.id,
+          userName: this.mySelectRow.userName,
+          noteName: this.mySelectRow.noteName,
+          passWord: this.mySelectRow.passWord,
+          userType: this.mySelectRow.userType
+        };
+      }
+    },
+    methods: {
+      clearValidate() {
+        this.$refs.formData.clearValidate();
+      },
+      save() {
+        if (this.mySelectRow.id) {
+          this.$refs.formData.validate(valid => {
+            if (valid) {
+              this.$api.vkcPost2(
+                "supermarketloan/crm/auth/sysaccount/update",
+                this.param,
+                res => {
+                  //console.log(this.param);
+                  this.$parent.goBackToAccounList();
+                }
+              );
+            } else {
+              return false;
+            }
+          });
+        } else {
+          this.$refs.formData.validate(valid => {
+            if (valid) {
+              this.$api.vkcPost2(
+                "supermarketloan/crm/auth/sysaccount/add",
+                this.param,
+                res => {
+                  //console.log(this.param);
+                  this.$parent.goBackToAccounList();
+                }
+              );
+            } else {
+              return false;
+            }
+          });
+        }
+
+      }
+    },
+    created: function () {
+      if (this.selectRow.id) {
+        //编辑账号
+        //console.log(this.mySelectRow.id);
+        this.$api.vkcPost2(
+          "supermarketloan/crm/auth/sysaccount/queryAccountById",
+          {
+            id: this.selectRow.id
+          },
+          res => {
+            this.mySelectRow = res;
+          }
+        );
+      }
+    }
+  };
+</script>
