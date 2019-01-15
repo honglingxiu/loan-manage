@@ -1,0 +1,193 @@
+<template>
+  <div>
+    <jb-position></jb-position>
+    <div>
+      <el-button type="primary" class="back" @click="goBackTo">返回上一页</el-button>
+      <el-radio-group v-model="tagType" class="pd-b20" @change="changeRouter">
+        <el-radio-button label="taskDetail">查看详情</el-radio-button>
+        <el-radio-button label="feedBackData">反馈数据</el-radio-button>
+        <el-radio-button label="logDetail">查看日志</el-radio-button>
+      </el-radio-group>
+    </div>
+    <div>
+      <el-card class="box-card" v-if="tagType!='taskDetail'">
+        <div slot="header" class="clearfix">
+          <span>投放任务</span>
+        </div>
+        <div>
+          <el-table
+            :data="tableData"
+            border
+            style="width: 100%">
+            <el-table-column
+              prop="taskType"
+              label="任务类型">
+            </el-table-column>
+            <el-table-column
+              prop="taskID"
+              label="任务ID">
+            </el-table-column>
+            <el-table-column
+              prop="taskName"
+              label="任务名称">
+            </el-table-column>
+            <el-table-column
+              v-if="taskType!='callTask'"
+              prop="webLink"
+              label="网页链接">
+              <template slot-scope="scope">
+                <a target="_blank" :href="scope.row.webLink">预览</a>
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="firstTrade"
+              label="一级行业">
+            </el-table-column>
+            <el-table-column
+              prop="secondTrade"
+              label="二级行业">
+            </el-table-column>
+            <el-table-column
+              label="任务状态"
+              v-if="taskType=='thirdTask'">
+              <template slot-scope="scope">
+                {{scope.row.taskStatus==1 ? '已启动' : '已暂停'}}
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="taskStartTime"
+              label="任务开始时间"
+              v-if="taskType=='thirdTask'"
+              width="170">
+            </el-table-column>
+            <el-table-column
+              prop="taskEndTime"
+              label="任务结束时间"
+              v-if="taskType=='thirdTask'"
+              width="170">
+            </el-table-column>
+            <el-table-column
+              v-if="taskType=='thirdTask'"
+              prop="firstChannel"
+              label="一级渠道">
+            </el-table-column>
+            <el-table-column
+              v-if="taskType=='thirdTask'"
+              prop="secondChannel"
+              label="二级渠道">
+            </el-table-column>
+            <el-table-column
+              prop="createTime"
+              label="任务创建时间"
+              width="170">
+            </el-table-column>
+            <el-table-column
+              prop="packageName"
+              label="用户包名称"
+              width="180">
+            </el-table-column>
+            <el-table-column
+              prop="totalCount"
+              label="用户总数">
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-card>
+      <div>
+        <transition name="move" mode="out-in">
+          <router-view></router-view>
+        </transition>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  export default {
+    name: "taskRelated",
+    data(){
+      return {
+        rowData:{},//上级菜单传进来的数据
+        tagType:"taskDetail",
+        taskType: "callTask",
+        tableData: [
+          {
+            taskType: "外呼任务",
+            taskID: "D1885555555",
+            taskName:"honglon",
+            webLink:"http://baidu.com",
+            firstTrade:"教育",
+            secondTrade:"K12",
+            taskStatus:"1",
+            taskStartTime: "2018-12-09 23:52:57",
+            taskEndTime: "2018-12-19 23:52:57",
+            firstChannel:"百度信息流",
+            secondChannel:"baiduxxx1",
+            createTime: "2018-11-69 23:52:57",
+            packageName:"hlx",
+            totalCount: 125
+          }
+        ]
+      }
+    },
+    computed:{
+    },
+    methods:{
+      changeRouter(){
+        if(this.tagType=="taskDetail"){
+          this.$router.push({path:'/putinTaskList/taskRelated/taskDetail',query:{taskType:this.taskType,tagType:"taskDetail"}});
+        }else if(this.tagType=="feedBackData"){
+          this.$router.push({path:'/putinTaskList/taskRelated/feedBackData',query:{taskType:this.taskType,tagType:"feedBackData"}});
+        }else {
+          this.$router.push({path:'/putinTaskList/taskRelated/logDetail',query:{taskType:this.taskType,tagType:"logDetail"}});
+        }
+      },
+      goBackTo(){
+        this.$router.push({name:'putinTaskList',params:{taskType:this.taskType}});
+      }
+    },
+    created(){
+      this.tagType=this.$route.query['tagType'];//根据当前路由显示对应的tab
+      this.taskType=this.$route.query['taskType'];
+    }
+  }
+</script>
+
+<!--<style scoped>
+  /deep/ .el-card{
+    margin-bottom: 10px;
+  }
+  /deep/ .el-card__header{
+    padding: 18px 20px 0px;
+    border-bottom: none;
+    box-sizing: border-box;
+  }
+  /deep/ .el-card__body {
+    padding: 30px 60px;
+    font-size:15px;
+  }
+  /deep/ .el-card__body p{
+    margin-bottom: 10px;
+  }
+  /deep/ .el-card__body p span{
+    display: inline-block;
+    width: 120px;
+    text-align: left;
+    margin-bottom: 10px;
+  }
+  /deep/ .el-table {
+    font-size: 14px;
+  }
+  /deep/ .el-tabs&#45;&#45;border-card>.el-tabs__content{
+    padding: 18px 20px;
+  }
+  /deep/ .el-tabs&#45;&#45;border-card>.el-tabs__header .el-tabs__item{
+    font-size:16px;
+  }
+  /deep/ .el-tabs&#45;&#45;border-card>.el-tabs__header .el-tabs__item:hover{
+    color: #909399;
+  }
+  /deep/ .el-tabs&#45;&#45;border-card>.el-tabs__header .el-tabs__item.is-active{
+    color: #303133;
+  }
+</style>-->

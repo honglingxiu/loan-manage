@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+	<title>管理系统</title>
+	<link rel="stylesheet" href="static/css/base.min.css">
+	<script src="static/js/jquery-1.11.1.min.js"></script>
+	<script src="static/js/JunboJsUI.min.js"></script>
+</head>
+
+<body>
+	<div id="app"></div>
+</body>
+
+</html>

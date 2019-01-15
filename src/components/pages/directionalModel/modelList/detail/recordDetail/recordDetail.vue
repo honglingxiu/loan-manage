@@ -1,0 +1,36 @@
+<template>
+  <div>
+    <h4>用户定向</h4>
+    <div class="mg-t15 relative detail">
+      <el-form label-width="100px" class="detail-form">
+        <el-form-item label="批次号：">000001</el-form-item>
+        <el-form-item label="批次名称：">批次号名称</el-form-item>
+        <el-form-item label="供应商：">八爪鱼</el-form-item>
+        <el-form-item label="一级行业：">教育</el-form-item>
+        <el-form-item label="二级行业：">K12</el-form-item>
+        <el-form-item label="数量：">666</el-form-item>
+      </el-form>
+      <el-form label-width="100px" class="detail-form">
+        <el-form-item label="批次号：">000001</el-form-item>
+        <el-form-item label="批次名称：">批次号名称</el-form-item>
+        <el-form-item label="供应商：">八爪鱼</el-form-item>
+        <el-form-item label="一级行业：">教育</el-form-item>
+        <el-form-item label="二级行业：">K12</el-form-item>
+        <el-form-item label="数量：">666</el-form-item>
+      </el-form>
+      <el-form label-width="100px" class="detail-form">
+        <el-form-item label="批次号：">000001</el-form-item>
+        <el-form-item label="批次名称：">批次号名称</el-form-item>
+        <el-form-item label="供应商：">八爪鱼</el-form-item>
+        <el-form-item label="一级行业：">教育</el-form-item>
+        <el-form-item label="二级行业：">K12</el-form-item>
+        <el-form-item label="数量：">666</el-form-item>
+      </el-form>
+    </div>
+  </div>
+</template>
+<script>
+export default {
+
+}
+</script>

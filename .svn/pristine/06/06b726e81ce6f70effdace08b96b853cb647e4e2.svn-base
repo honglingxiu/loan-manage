@@ -1,0 +1,90 @@
+{
+	"0": {
+		"index": "/home",
+		"title": "统计报表",
+		"subs": [{
+				"index": "/home",
+				"title": "首页"
+			},
+			{
+				"index": "/homeFinancialLoan",
+				"title": "金融贷款"
+			},
+			{
+				"index": "/homeWeddingPhoto",
+				"title": "婚纱摄影"
+			}
+		]
+	},
+	"4": {
+		"index": "/applyRecord",
+		"title": "申请记录",
+		"subs": [{
+				"index": "/financialLoan",
+				"title": "金融贷款"
+			},
+			{
+				"index": "/weddingPhoto",
+				"title": "婚纱摄影"
+			}
+		]
+	},
+	"5": {
+		"index": "/submitRecord",
+		"title": "提交记录",
+		"subs": [{
+				"index": "/submitCustomer",
+				"title": "提交客户"
+			},
+			{
+				"index": "/submitCustomerService",
+				"title": "提交客服"
+			}
+		]
+	},
+	"8": {
+		"index": "/activity",
+		"title": "推广链接管理",
+		"subs": [{
+				"index": "/activityList",
+				"title": "活动列表"
+			},
+			{
+				"index": "/activityForm",
+				"title": "表单控件"
+			},
+			{
+				"index": "/activityRecord",
+				"title": "申请记录"
+			}
+		]
+	},
+	"10": { "index": "/order", "title": "订单管理" },
+	"100": {
+		"index": "/directionalModel",
+		"title": "定向模型管理",
+		"subs": [{
+				"index": "/directionalModelList",
+				"title": "定向模型列表"
+			},
+			{
+				"index": "/directionalModel",
+				"title": "新增定向模型"
+			}
+		]
+	},
+	"101": {
+		"index": "/putinTask",
+		"title": "投放任务管理",
+		"subs": [{
+				"index": "/putinTaskList",
+				"title": "投放任务列表"
+			},
+			{
+				"index": "/putinTask",
+				"title": "新增投放任务"
+			}
+		]
+	},
+	"default": ""
+}

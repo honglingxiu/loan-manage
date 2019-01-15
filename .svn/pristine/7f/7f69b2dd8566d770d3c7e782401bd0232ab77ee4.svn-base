@@ -1,0 +1,166 @@
+<template>
+  <div>
+    <h4>筛选记录</h4>
+    <el-form ref="formData" :model="formData" :inline="true" size="small" class="mg-t20">
+      <el-form-item label="用户包筛选时间：">
+        <el-date-picker
+          v-model="formData.startAndEndTime"
+          type="daterange"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          value-format="yyyy-MM-dd"
+          @change="getDate"
+          size="small"
+        ></el-date-picker>
+      </el-form-item>
+      <el-form-item label="用户包名称：">
+        <el-input v-model="formData.modelName" placeholder="请输入" size="small"></el-input>
+      </el-form-item>
+      <el-button type="primary" size="small" @click="handleQuery()">查询</el-button>
+      <el-button type="primary" size="small" @click="addDialog = true" class="pull-right">新增筛选用户包</el-button>
+    </el-form>
+    <div class="mg-t20" v-if="tableData.length>0">
+      <el-table :data="tableData" stripe tooltip-effect="light" border>
+        <el-table-column label="序号" align="center" type="index" :index="$util.IndexMethod(formData.pageIndex,formData.pageSize)" width="55"></el-table-column>
+        <el-table-column prop="data" label="用户包编号" align="center" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column prop="data" label="用户包名称" align="center" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column prop="data" label="用户包筛选时间" align="center" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column prop="data" label="操作账号" align="center" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column prop="data" label="当前处理状态" align="center" :show-overflow-tooltip="true">
+          <template slot-scope="scope">
+            <span v-if="scope.row.state===0">处理完成</span>
+            <span v-if="scope.row.state===1">处理中</span>
+            <div v-if="scope.row.state===2">
+              <el-dropdown :hide-on-click="false" @command="handleState" class="mg-r15">
+                <span class="el-dropdown-link">
+                  <el-button type="text">处理异常</el-button>
+                  <i class="el-icon-arrow-down el-icon--right"></i>
+                </span>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item :command="{item:scope.row,handle:'handleSuccess'}">处理完成</el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
+              <el-button type="text" @click="abnormalDialog=true">查看</el-button>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="data" label="用户包数量" align="center" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column prop="data" label="处理完成时间" align="center" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column label="编辑">
+          <template slot-scope="scope">
+            <el-dropdown :hide-on-click="false" @command="handleView">
+              <span class="el-dropdown-link">
+                <el-button type="text">操作</el-button>
+                <i class="el-icon-arrow-down el-icon--right"></i>
+              </span>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item :command="{item:scope.row,handle:'RecordDetail'}">查看详情</el-dropdown-item>
+                <el-dropdown-item :command="{item:scope.row,handle:'RecordLog'}">查看日志</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="pull-right mg-t20 mg-b20">
+        <jb-pagination @getList="getReocrdList" :pageIndex="formData.pageIndex" :pageSize="formData.pageSize" :totalCount="totalCount"></jb-pagination>
+      </div>
+    </div>
+    <div v-else class="text-center">
+      <div class="add-user-package" @click="addDialog = true">
+        <i class="el-icon-circle-plus"></i>
+        <p class="mg-t20">新增筛选用户包</p>
+      </div>
+    </div>
+    <el-dialog title="查看用户包处理异常详情" :visible.sync="abnormalDialog" width="30%">
+      <hr style="margin-top:-20px">
+      <el-form label-width="200px">
+        <el-form-item label="用户包分包数量：">1000</el-form-item>
+        <el-form-item label="成功条数：">800</el-form-item>
+      </el-form>
+    </el-dialog>
+    <el-dialog title="新增筛选用户包" :visible.sync="addDialog" width="30%">
+      <hr style="margin-top:-20px">
+      <el-form label-width="150px">
+        <el-form-item label="用户包名称：">
+          <el-input v-model="userPackageName" placeholder="请输入用户包名称" class="width300"></el-input>
+        </el-form-item>
+        <el-form-item label="分包数量：" style="margin-top:20px">
+          <el-select v-model="userPackageNum" placeholder="请选择" class="width200">
+            <el-option label="全量" value="全量"></el-option>
+            <el-option label="限量" value="限量"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label>
+          <p>注：选择全量以当前筛选创建时间为截止时间，查询当前数据库中符合筛选条件的所有数据。</p>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="text-center">
+        <el-button @click="addDialog = false">取 消</el-button>
+        <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+<script>
+import { mapState } from 'vuex';
+export default {
+  computed: {
+    ...mapState({
+      selectModel: state => state.directionalModel.selectModel
+    })
+  },
+  data() {
+    return {
+      abnormalDialog: false,
+      addDialog: false,
+      totalCount: 0,
+      // tableData: [{ data: "data1", state: 0 }, { data: "data2", state: 1 }, { data: "data3", state: 2 }, { data: "data4", state: 1 }],
+      tableData: [],
+      formData: {
+        startAndEndTime: null,
+        filterStartTime: '',
+        filterEndTime: '',
+        modelName: "",
+        pageIndex: 1,
+        pageSize: 10
+      },
+      userPackageName: "",
+      userPackageNum: ""
+    }
+  },
+  methods: {
+    getDate(val) {
+      this.formData.filterStartTime = val ? val[0] : '';
+      this.formData.filterEndTime = val ? val[1] : '';
+    },
+    handleQuery() { },
+    handleState(command) {
+      this.$confirm('确定修改为“处理完成状态”？', '提示').then(() => {
+        command.item.state = 0;
+        this.$message({
+          type: 'success',
+          message: '修改成功!'
+        });
+      }).catch(() => { });
+    },
+    handleView(command) {
+      this.$store.commit('SELECT_RECORD', command.item);
+      this.$store.commit('RECORD_DETAIL_TAB', command.handle);
+      this.$router.push('/directionalModelList/detail/RecordDetail');
+    },
+    getReocrdList(pageIndex, pageSize) {
+      if (pageIndex) this.formData.pageIndex = pageIndex;
+      if (pageSize) this.formData.pageSize = pageSize;
+      // this.$api.vkcPost(
+      //   "supermarketloan/mgr/loanapply/getuserloanapply",
+      //   { param: this.formData },
+      //   res => {
+      //     this.totalCount = res.totalCount;
+      //     this.tableData = res.data;
+      //   },
+      //   "getAllData"
+      // );
+    },
+  }
+}
+</script>

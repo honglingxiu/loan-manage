@@ -1,0 +1,24 @@
+<template>
+	<div class="clearfix breadcrumb">当前位置：{{ path2 }}</div>
+</template>
+
+<script>
+	export default {
+	  name:"jb-position",
+		data () {
+			return {
+				path: ''
+			}
+		},
+    computed:{
+	    path2(){
+	      return this.$route.meta.address;
+      }
+    },
+		created () {
+			this.path = this.$route.meta.address;
+    }
+	}
+</script>
+
+<style scoped></style>

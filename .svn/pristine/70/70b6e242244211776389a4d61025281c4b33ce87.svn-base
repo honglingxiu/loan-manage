@@ -1,0 +1,88 @@
+<template>
+  <div>
+    <el-form ref="formData" :model="formData" :inline="true" size="small">
+      <el-form-item label="模型创建时间：">
+        <el-date-picker
+          v-model="formData.startAndEndTime"
+          type="daterange"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          value-format="yyyy-MM-dd"
+          @change="getDate"
+          size="small"
+        ></el-date-picker>
+      </el-form-item>
+      <el-form-item label="模型名称：">
+        <el-input v-model="formData.modelName" placeholder="请输入" size="small"></el-input>
+      </el-form-item>
+      <el-button type="primary" size="small" @click="handleQuery()">查询</el-button>
+    </el-form>
+    <div style="margin-bottom:20px">
+      <el-table :data="tableData" stripe tooltip-effect="light" border>
+        <el-table-column label="序号" align="center" type="index" :index="$util.IndexMethod(formData.pageIndex,formData.pageSize)" width="55"></el-table-column>
+        <el-table-column prop="data" label="模型编号" align="center" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column prop="data" label="模型名称" align="center" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column prop="data" label="模型创建时间" align="center" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column prop="data" label="最新筛选时间" align="center" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column prop="data" label="筛选记录" align="center" :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column label="操作">
+          <template slot-scope="scope">
+            <el-button type="text" @click="viewRecord(scope.row)">筛选记录</el-button>
+            <el-button type="text" @click="viewDetail(scope.row)">查看详情</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+    <div style="float: right" v-if="tableData.length>0">
+      <jb-pagination @getList="getModelList" :pageIndex="formData.pageIndex" :pageSize="formData.pageSize" :totalCount="totalCount"></jb-pagination>
+    </div>
+  </div>
+</template>
+<script>
+export default {
+  data() {
+    return {
+      totalCount: 0,
+      tableData: [{ data: "data1" }, { data: "data2" }, { data: "data3" }, { data: "data4" }, { data: "data5" }, { data: "data6" }],
+      formData: {
+        startAndEndTime: null,
+        createStartTime: '',
+        createEndTime: '',
+        modelName: "",
+        pageIndex: 1,
+        pageSize: 10
+      }
+    }
+  },
+  methods: {
+    getDate(val) {
+      this.formData.createStartTime = val ? val[0] : '';
+      this.formData.createEndTime = val ? val[1] : '';
+    },
+    handleQuery() { },
+    viewRecord(data) {
+      this.$store.commit('SELECT_MODEL', data);
+      this.$store.commit('MODEL_DETAIL_TAB', "RecordList");
+      this.$router.push('/directionalModelList/detail/ModelDetail')
+    },
+    viewDetail(data) {
+      this.$store.commit('SELECT_MODEL', data);
+      this.$store.commit('MODEL_DETAIL_TAB', "ViewDetail");
+      this.$router.push('/directionalModelList/detail/ModelDetail')
+    },
+    getModelList(pageIndex, pageSize) {
+      if (pageIndex) this.formData.pageIndex = pageIndex;
+      if (pageSize) this.formData.pageSize = pageSize;
+      // this.$api.vkcPost(
+      //   "supermarketloan/mgr/loanapply/getuserloanapply",
+      //   { param: this.formData },
+      //   res => {
+      //     this.totalCount = res.totalCount;
+      //     this.tableData = res.data;
+      //   },
+      //   "getAllData"
+      // );
+    },
+  }
+}
+</script>

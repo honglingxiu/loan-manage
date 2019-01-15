@@ -1,0 +1,452 @@
+<template>
+  <div>
+    <el-card class="box-card">
+      <div slot="header" class="clearfix">
+        <span>整体投放数据</span>
+      </div>
+      <div>
+        <el-form :inline="true" :model="formData">
+          <el-form-item label="日期：">
+            <el-date-picker
+              v-model="formData.createTime"
+              type="datetimerange"
+              align="right"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              :default-time="['00:00:00', '23:59:59']"
+              @change='handleDate'>
+            </el-date-picker>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="getPutupList">查询</el-button>
+          </el-form-item>
+          <el-form-item class="f-r">
+            <el-button type="primary" @click="getPutupList">导入投放数据</el-button>
+          </el-form-item>
+        </el-form>
+        <el-table
+          v-if="taskType=='callTask'"
+          :data="tableData1"
+          border
+          style="width: 100%">
+          <el-table-column
+            prop="dealNum"
+            label="处理数">
+          </el-table-column>
+          <el-table-column
+            prop="realPhoneNum"
+            label="真实号码数">
+          </el-table-column>
+          <el-table-column
+            prop="nullPhoneNum"
+            label="空号码数">
+          </el-table-column>
+          <el-table-column
+            prop="callNum"
+            label="接通数">
+          </el-table-column>
+          <el-table-column
+            prop="rejectNum"
+            label="拒接数">
+          </el-table-column>
+          <el-table-column
+            prop="noPeopleNum"
+            label="无人接听数">
+          </el-table-column>
+          <el-table-column
+            prop="dealPassNum"
+            label="处理通过数">
+          </el-table-column>
+          <el-table-column
+            prop="dealPassRate"
+            label="处理通过率">
+          </el-table-column>
+          <el-table-column
+            prop="dealNoPassNum"
+            label="处理不通过数">
+          </el-table-column>
+          <el-table-column
+            prop="dealNoPassRate"
+            label="处理不通过率">
+          </el-table-column>
+          <el-table-column
+            prop="delayNum"
+            label="延迟沟通数">
+          </el-table-column>
+        </el-table>
+        <el-table
+          v-if="taskType=='smsTask'"
+          :data="tableData2"
+          border
+          style="width: 100%">
+          <el-table-column
+            prop="sendSuccessNum"
+            label="成功发送量">
+          </el-table-column>
+          <el-table-column
+            prop="sendFailNum"
+            label="发送失败量">
+          </el-table-column>
+          <el-table-column
+            prop="clickNum"
+            label="点击量">
+          </el-table-column>
+          <el-table-column
+            prop="clickRate"
+            label="点击率">
+          </el-table-column>
+          <el-table-column
+            prop="PV"
+            label="PV">
+          </el-table-column>
+          <el-table-column
+            prop="UV"
+            label="UV">
+          </el-table-column>
+          <el-table-column
+            prop="clueNum"
+            label="线索量">
+          </el-table-column>
+          <el-table-column
+            prop="clueRate"
+            label="线索率">
+          </el-table-column>
+        </el-table>
+        <el-table
+          v-if="taskType=='thirdTask'"
+          :data="tableData3"
+          border
+          style="width: 100%">
+          <el-table-column
+            prop="paperConsume"
+            label="账面消费">
+          </el-table-column>
+          <el-table-column
+            prop="cashConsume"
+            label="现金消费">
+          </el-table-column>
+          <el-table-column
+            prop="showNum"
+            label="展示数">
+          </el-table-column>
+          <el-table-column
+            prop="clickNum"
+            label="点击数">
+          </el-table-column>
+          <el-table-column
+            prop="clickRate"
+            label="点击率">
+          </el-table-column>
+          <el-table-column
+            prop="CPC"
+            label="CPC">
+          </el-table-column>
+          <el-table-column
+            prop="OCPM"
+            label="OCPM">
+          </el-table-column>
+          <el-table-column
+            prop="clueNum"
+            label="线索量">
+          </el-table-column>
+          <el-table-column
+            prop="consumeCPA"
+            label="消费CPA">
+          </el-table-column>
+          <el-table-column
+            prop="cashCPA"
+            label="现金CPA">
+          </el-table-column>
+          <el-table-column
+            prop="clueRate"
+            label="线索率">
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-card>
+    <!--<el-card class="box-card">
+      <div slot="header" class="clearfix">
+        <span>每日投放数据</span>
+      </div>
+      <div>
+        123
+      </div>
+    </el-card>-->
+    <el-tabs type="border-card">
+      <el-tab-pane label="每日投放数据">
+        <i-table v-if="taskType=='callTask'" ref="itable" :list="tableList1" :columns="callTaskColumns"
+                 :total="totalCount" @handlePageChange="handlePageChange"></i-table>
+        <i-table v-if="taskType=='smsTask'" ref="itable" :list="tableList2" :columns="smsTaskColumns"
+                 :total="totalCount" @handlePageChange="handlePageChange"></i-table>
+        <i-table v-if="taskType=='thirdTask'" ref="itable" :list="tableList3" :columns="thirdTaskColumns"
+                 :total="totalCount" @handlePageChange="handlePageChange"></i-table>
+      </el-tab-pane>
+      <!--<el-tab-pane label="用户画像分析">配置管理</el-tab-pane>-->
+    </el-tabs>
+  </div>
+</template>
+
+<script>
+  export default {
+    name: "feedBackData",
+    data() {
+      return {
+        taskType: "callTask",
+        formData: {
+          createTime: "",
+          startTime: "",
+          endTime: "",
+          pageIndex:1
+        },
+        totalCount:1,
+        tableData1: [
+          {
+            dealNum:500,
+            realPhoneNum:500,
+            nullPhoneNum:500,
+            callNum:502,
+            rejectNum:502,
+            noPeopleNum:256,
+            dealPassNum:256,
+            dealPassRate:0.6,
+            dealNoPassNum:25,
+            dealNoPassRate:0.25,
+            delayNum:25
+          }
+        ],
+        tableData2: [
+          {
+            sendSuccessNum:1500,
+            sendFailNum:100,
+            clickNum:1000,
+            clickRate:0.9,
+            PV:856,
+            UV:85,
+            clueNum:855,
+            clueRate:0.8
+          }
+        ],
+        tableData3: [
+          {
+            paperConsume:52255.00,
+            cashConsume:85565.00,
+            showNum:15522,
+            clickNum:158855,
+            clickRate:0.9,
+            CPC:300,
+            OCPM:25,
+            clueNum:15885,
+            consumeCPA:19.25,
+            cashCPA:195.25,
+            clueRate:0.8
+          }
+        ],
+        tableList1:[
+          {
+            date:"2018-12-25 15:00:25",
+            totalDealNum:152,
+            callNum:155,
+            rejectNum:155,
+            noPeopleNum:155,
+            nullPhoneNum:155,
+            dealNum:152,
+            dealPassRate:152,
+            dealNoPassNum:25,
+            dealNoPassRate:0.25,
+            delayNum:25
+          }
+        ],
+        tableList2:[
+          {
+            date:"2018-12-25",
+            sendSuccessNum:1500,
+            sendFailNum:100,
+            clickNum:1000,
+            clickRate:0.9,
+            PV:856,
+            UV:85,
+            clueNum:855,
+            clueRate:0.8
+          }
+        ],
+        tableList3:[
+          {
+            date:"2018-12-25",
+            paperConsume:52255.00,
+            cashConsume:85565.00,
+            showNum:15522,
+            clickNum:158855,
+            clickRate:0.9,
+            CPC:300,
+            OCPM:25,
+            clueNum:15885,
+            consumeCPA:19.25,
+            cashCPA:195.25,
+            clueRate:0.8
+          }
+        ],
+        callTaskColumns: [
+          {
+            prop: 'date',
+            label: '日期'
+          },
+          {
+            prop: 'totalDealNum',
+            label: '当日处理数'
+          },
+          {
+            prop: 'callNum',
+            label: '接通数'
+          },
+          {
+            prop: 'rejectNum',
+            label: '拒接数'
+          },
+          {
+            prop: 'noPeopleNum',
+            label: '无人接听数'
+          },
+          {
+            prop: 'nullPhoneNum',
+            label: '空号数'
+          },
+          {
+            prop: 'dealNum',
+            label: '处理通过数'
+          },
+          {
+            prop: 'dealPassRate',
+            label: '处理通过率'
+          },
+          {
+            prop: 'dealNoPassNum',
+            label: '处理不通过数'
+          },
+          {
+            prop: 'dealNoPassRate',
+            label: '处理不通过率'
+          },
+          {
+            prop: 'delayNum',
+            label: '延迟沟通数'
+          }
+
+        ],
+        smsTaskColumns: [
+          {
+            prop: 'date',
+            label: '日期'
+          },
+          {
+            prop: 'sendSuccessNum',
+            label: '成功发送量'
+          },
+          {
+            prop: 'sendFailNum',
+            label: '发送失败量'
+          },
+          {
+            prop: 'clickNum',
+            label: '点击量'
+          },
+          {
+            prop: 'clickRate',
+            label: '点击率'
+          },
+          {
+            prop: 'PV',
+            label: 'PV'
+          },
+          {
+            prop: 'UV',
+            label: 'UV'
+          },
+          {
+            prop: 'clueNum',
+            label: '线索量'
+          },
+          {
+            prop: 'clueRate',
+            label: '线索率'
+          }
+        ],
+        thirdTaskColumns: [
+          {
+            prop: 'date',
+            label: '日期'
+          },
+          {
+            prop: 'paperConsume',
+            label: '账面消费'
+          },
+          {
+            prop: 'cashConsume',
+            label: '现金消费'
+          },
+          {
+            prop: 'showNum',
+            label: '展示数'
+          },
+          {
+            prop: 'clickNum',
+            label: '点击数'
+          },
+          {
+            prop: 'clickRate',
+            label: '点击率',
+          },
+          {
+            prop: 'CPC',
+            label: 'CPC'
+          },
+          {
+            prop: 'OCPM',
+            label: 'OCPM'
+          },
+          {
+            prop: 'clueNum',
+            label: '线索量'
+          },
+          {
+            prop: 'consumeCPA',
+            label: '消耗CPA'
+          },
+          {
+            prop: 'cashCPA',
+            label: '现金CPA'
+          },
+          {
+            prop: 'clueRate',
+            label: '线索率'
+          }
+        ]
+      }
+    },
+    methods: {
+      handleDate(dateArr) {
+        if (!dateArr) {
+          this.formData.taskStartTime = this.formData.taskEndTime = '';
+        } else {
+          this.formData.taskStartTime = dateArr[0] + ' 00:00:00';
+          this.formData.taskEndTime = dateArr[1] + ' 23:59:59';
+        }
+      },
+      getPutupList() {
+
+      },
+      handlePageChange(pagination){
+        this.formData.pageIndex = (pagination.Pcurrent - 1) * pagination.Psizes + 1;
+        this.formData.pageSize = pagination.Psizes;
+        this.getPutupList();
+      }
+    },
+    created() {
+      this.taskType = this.$route.query['taskType'];
+      this.getPutupList();
+    }
+  }
+</script>
+
+<style scoped>
+
+</style>

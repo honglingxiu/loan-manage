@@ -1,0 +1,41 @@
+<template>
+  <div class="detail-info relative">
+    <keep-alive>
+      <component :is="page"></component>
+    </keep-alive>
+  </div>
+</template>
+<script>
+import RecordDetail from "./recordDetail";
+import ModelDetail from "./modelDetail";
+export default {
+  components: {
+    RecordDetail,
+    ModelDetail
+  },
+  computed: {
+    page() {
+      return this.$route.params.page;
+    }
+  }
+}
+</script>
+<style scoped>
+.detail-info >>> .el-form-item {
+  margin: 0;
+}
+.detail-info >>> .detail-form {
+  border: 1px solid #ccc;
+  margin: 0 50px;
+}
+.detail-info >>> .add-user-package {
+  display: inline-block;
+  border: 1px solid #ccc;
+  background: #eee;
+  margin: 50px auto;
+  padding: 50px 100px;
+}
+.detail-info >>> .add-user-package .el-icon-circle-plus{
+  font-size: 50px
+}
+</style>

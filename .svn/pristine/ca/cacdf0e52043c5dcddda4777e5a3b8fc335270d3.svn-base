@@ -1,0 +1,174 @@
+<template>
+  <div>
+    <el-card class="box-card">
+      <div slot="header" class="clearfix">
+        <span>推广目标</span>
+      </div>
+      <div>
+        <p><span>选择推广目标：</span>落地页</p>
+      </div>
+    </el-card>
+    <el-card class="box-card">
+      <div slot="header" class="clearfix">
+        <span>投放计划</span>
+      </div>
+      <div>
+        <p><span>投放任务ID：</span>00015526557</p>
+        <p><span>投放任务名称：</span>K12落地页投放_v1</p>
+      </div>
+    </el-card>
+    <el-card class="box-card">
+      <div slot="header" class="clearfix">
+        <span>投放业务</span>
+      </div>
+      <div>
+        <p><span>选择行业：</span>教育&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;K12</p>
+      </div>
+    </el-card>
+    <el-card class="box-card">
+      <div slot="header" class="clearfix">
+        <span>任务类型</span>
+      </div>
+      <div>
+        <p><span>触点类型：</span>外呼</p>
+        <p v-if="taskType=='thirdTask'"><span>一级渠道：</span>百度信息流</p>
+        <p v-if="taskType=='thirdTask'"><span>二级渠道：</span>bdxxl01</p>
+        <p v-if="taskType=='callTask'"><span>备注：</span>补全用户信息</p>
+        <p v-if="taskType!='callTask'"><span>网页链接：</span><a target="_blank" href="http://baidu.com">www.eduk12.com</a>
+        </p>
+        <p v-if="taskType=='thirdTask'"><span>当前状态：</span>bdxxl01</p>
+        <p v-if="taskType=='thirdTask'"><span>投放时间：</span>bdxxl01</p>
+        <p v-if="taskType=='smsTask'"><span>短信内容：</span>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean
+          euismod bibendum laoreet. Proin gravida dolor sit amet lacus accumsan et viverra justo commodo. Proin sodales
+          pulvinar tempor. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nam
+          fermentum, nulla luctus pharetra vulputate, felis tellus mollis orci, sed rhoncus sapien nunc eget.</p>
+      </div>
+    </el-card>
+    <el-card class="box-card">
+      <div slot="header" class="clearfix">
+        <span>定向模型</span>
+      </div>
+      <div>
+        <el-table
+          :data="tableData"
+          border
+          style="width: 100%">
+          <el-table-column
+            prop="userNo"
+            label="用户包编号"
+            width="180">
+          </el-table-column>
+          <el-table-column
+            prop="packageName"
+            label="用户包名称"
+            width="180">
+          </el-table-column>
+          <el-table-column
+            prop="packageNum"
+            label="用户包数量">
+          </el-table-column>
+          <el-table-column
+            prop="createTime"
+            label="用户包创建时间">
+          </el-table-column>
+          <el-table-column
+            prop="operator"
+            label="操作账号">
+          </el-table-column>
+        </el-table>
+        <div class="model-list">
+          <div class="model-list-one">
+            <p><span>批次号：</span>000001</p>
+            <p><span>供应商：</span>八爪鱼</p>
+            <p><span>一级行业：</span>教育</p>
+            <p><span>二级行业：</span>K12</p>
+            <p><span>数量：</span>1000</p>
+          </div>
+          <div class="subnav-banner">  
+            <span>受众信息</span>
+          </div>
+          <div class="model-list-two">
+            <p><span>批次号：</span>000001</p>
+            <p><span>供应商：</span>八爪鱼</p>
+            <p><span>一级行业：</span>教育</p>
+            <p><span>二级行业：</span>K12</p>
+            <p><span>数量：</span>1000</p>
+          </div>
+        </div>
+      </div>
+    </el-card>
+    <el-card class="box-card">
+      <div class="text-center">
+        <el-button type="primary">取消</el-button>
+        <el-button type="primary">保存</el-button>
+      </div>
+    </el-card>
+  </div>
+</template>
+
+<script>
+  export default {
+    name: "taskDetail",
+    data() {
+      return {
+        taskType: "callTask",
+        tableData: [
+          {
+            userNo: "N15255255222",
+            packageName: "honglingx",
+            packageNum: 125,
+            createTime: "2018-12-69 23:52:57",
+            operator: "hlx"
+          }
+        ]
+      }
+    },
+    created() {
+      this.taskType = this.$route.query['taskType'];
+    }
+  }
+</script>
+
+<!--<style scoped>
+  /deep/ .el-button {
+    padding: 12px 56px;
+  }
+
+  .model-list {
+    border: 1px solid #ebeef5;
+    margin-top: 10px;
+  }
+
+  .model-list .model-list-one {
+    padding: 15px;
+  }
+
+  .model-list .model-list-two {
+    padding: 15px;
+  }
+
+  div.subnav-banner {
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    border-bottom: 1px solid #ebeef5;
+  }
+
+  div.subnav-banner span {
+    color: #686868;
+    display: inline-block;
+    vertical-align: -15px;
+  }
+
+  .line {
+     display: inline-block;
+     width: 44%;
+    border-top: 1px solid #ccc;
+  }
+
+  .txt {
+     color: #686868;
+     vertical-align: -7px;
+     font-size: 23px;
+  }
+</style>-->

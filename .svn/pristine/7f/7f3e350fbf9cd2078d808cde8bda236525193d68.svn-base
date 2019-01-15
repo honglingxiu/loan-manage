@@ -1,0 +1,79 @@
+<template>
+<div>
+  <el-card class="box-card">
+    <div slot="header" class="clearfix">
+      <span>操作日志</span>
+    </div>
+    <div>
+      <!--<el-table
+        :data="tableData"
+        border
+        style="width: 100%">
+        <el-table-column
+          prop="operateTime"
+          label="操作时间">
+        </el-table-column>
+        <el-table-column
+          prop="operator"
+          label="操作人">
+        </el-table-column>
+        <el-table-column
+          label="操作内容">
+          <template slot-scope="scope">
+            <span style="color: #409EFF">{{scope.row.operatedContent}}</span>
+          </template>
+        </el-table-column>
+      </el-table>-->
+      <BaseTable :baseData="baseData">
+      </BaseTable>
+    </div>
+  </el-card>
+</div>
+</template>
+
+<script>
+  export default {
+    name: "logDetail",
+    data(){
+      return {
+        taskType: "callTask",
+        baseData: {
+          table: {
+            columns: [
+              {
+                key: 'operateTime',
+                label: '操作时间'
+              },
+              {
+                key: 'operator',
+                label: '操作人'
+              },
+              {
+                key: 'operatedContent',
+                label: '操作内容',
+                type:"format",
+                format:(row)=>{
+                  return `<span style="color: #409EFF">${row.operatedContent}</span>`;
+                }
+              }
+            ],
+            list: [
+              {
+                operateTime:"2019-01-02 18:02:12",
+                operator:"hlx",
+                operatedContent:"修改了数据"
+              }
+            ]
+          }
+        },
+      }
+    },
+    created(){
+      this.taskType=this.$route.query['taskType'];
+    }
+  }
+</script>
+
+<style scoped>
+
+</style>
